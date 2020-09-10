@@ -1,0 +1,148 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: deck-o-cards-api
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+custom:
+  gamesTableName: 'deck-o-cards-games-table'
+
+provider:
+  name: aws
+  runtime: java8
+  stage: dev
+  region: us-west-2
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - { "Fn::GetAtt": ["GamesDynamoDBTable", "Arn" ] }
+  environment:
+    GAMES_TABLE_NAME: ${self:custom.gamesTableName}
+
+# you can add packaging information here
+package:
+  artifact: 'target/${self:service}-${self:provider.stage}.jar'
+
+functions:
+  createGame:
+    handler: com.serverless.CreateGameHandler
+    events:
+      - http:
+          path: /deckocards
+          method: post
+  joinGame:
+    handler: com.serverless.JoinGameHandler
+    events:
+      - http:
+          path: /deckocards/join/{code}/{name}
+          method: put
+  dealHand:
+    handler: com.serverless.DealHandHandler
+    events:
+      - http:
+          path: /deckocards/deal/{code}
+          method: put
+  takeTurn:
+    handler: com.serverless.TakeMyTurnHandler
+    events:
+      - http:
+          path: /deckocards/turn/{code}/{card}/{how}/{pass}/{player}
+          method: put
+  setSettings:
+    handler: com.serverless.SetSettingsHandler
+    events:
+      - http:
+          path: /deckocards/settings/{code}/{settings}
+          method: put
+  deleteGame:
+    handler: com.serverless.DeleteGameHandler
+    events:
+      - http:
+          path: /deckocards/{code}
+          method: delete
+  startGame:
+    handler: com.serverless.StartGameHandler
+    events:
+      - http:
+          path: /deckocards/start/{code}
+          method: put
+  setTrump:
+    handler: com.serverless.SetTrumpHandler
+    events:
+      - http:
+          path: /deckocards/trump/{code}/{trump}
+          method: put
+  getGame:
+    handler: com.serverless.GetGameHandler
+    events:
+      - http:
+          path: /deckocards/{code}
+          method: get
+  score:
+    handler: com.serverless.ScoreHandler
+    events:
+      - http:
+          path: /deckocards/score/{code}/{name}/{points}
+          method: put
+  joinTeam:
+    handler: com.serverless.JoinTeamHandler
+    events:
+      - http:
+          path: /deckocards/team/{code}/{name}/{team}
+          method: put
+
+resources:
+  Resources:
+    GamesDynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+         TableName: ${self:custom.gamesTableName}
+         AttributeDefinitions:
+#           - AttributeName: id
+#             AttributeType: S
+           - AttributeName: code
+             AttributeType: S
+         KeySchema:
+#           - AttributeName: id
+#             KeyType: HASH
+           - AttributeName: code
+             KeyType: HASH
+         ProvisionedThroughput:
+           ReadCapacityUnits: 10
+           WriteCapacityUnits: 10
+
+
+# you can add CloudFormation resource templates here
+#resources:
+#  Resources:
+#    NewResource:
+#      Type: AWS::S3::Bucket
+#      Properties:
+#        BucketName: my-new-bucket
+#  Outputs:
+#     NewOutput:
+#       Description: "Description for the output"
+#       Value: "Some output value"
