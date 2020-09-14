@@ -29,7 +29,7 @@ public class GameTest {
         String code = callHandlerResponse("/", "POST");
         assert code.length() == 5;
         System.out.println("Game code is " + code);
-        List<String> players = List.of("Abby", "Alan", "Henry");
+        List<String> players = List.of("Me", "Bobby", "Joe");
         for (String name: players) {
             int status = callHandler("/join/" + code + "/" + name, "PUT");
             assert status == 200;
@@ -83,10 +83,10 @@ public class GameTest {
         System.out.println("Game code is " + code);
         assert code.length() == 5;
         List<Player> players = new ArrayList<>();
-        players.add(new Player("Abby"));
-        players.add(new Player("Alan"));
-        players.add(new Player("Emma"));
-        players.add(new Player("Henry"));
+        players.add(new Player("Bobby"));
+        players.add(new Player("Billy"));
+        players.add(new Player("Joe"));
+        players.add(new Player("Me"));
         for (Player p: players) {
             int status = callHandler("/join/" + code + "/" + p.getName(), "PUT");
             assert status == 200;
@@ -95,13 +95,13 @@ public class GameTest {
         String settings = pinochleSettingsStringForURL();
         int status = callHandler("/settings/" + code + "/" + settings, "PUT");
         assert status == 200;
-        status = joinTeam(code, "Abby", "We");
+        status = joinTeam(code, "Me", "We");
         assert status == 200;
-        status = joinTeam(code, "Alan", "We");
+        status = joinTeam(code, "Billy", "We");
         assert status == 200;
-        status = joinTeam(code, "Emma", "They");
+        status = joinTeam(code, "Bobby", "They");
         assert status == 200;
-        status = joinTeam(code, "Henry", "They");
+        status = joinTeam(code, "Joe", "They");
         assert status == 200;
         System.out.println("Settings have been set for pinochle....");
         status = callHandler("/start/" + code, "PUT");
@@ -135,14 +135,14 @@ public class GameTest {
         System.out.println("Game code is " + code);
         assert code.length() == 5;
         List<Player> players = new ArrayList<>();
-        Player abby = new Player("Abby");
-        Player alan = new Player("Alan");
-        Player emma = new Player("Emma");
-        Player henry = new Player("Henry");
-        players.add(abby);
-        players.add(alan);
-        players.add(emma);
-        players.add(henry);
+        Player me = new Player("Me");
+        Player billy = new Player("Billy");
+        Player bobby = new Player("Bobby");
+        Player joe = new Player("Joe");
+        players.add(me);
+        players.add(billy);
+        players.add(bobby);
+        players.add(joe);
         for (Player p: players) {
             int status = callHandler("/join/" + code + "/" + p.getName(), "PUT");
             assert status == 200;
@@ -152,18 +152,18 @@ public class GameTest {
         String settings = pinochleSettingsStringForURL(counts, true, true);
         int status = callHandler("/settings/" + code + "/" + settings, "PUT");
         assert status == 200;
-        status = joinTeam(code, "Abby", "We");
+        status = joinTeam(code, "Me", "We");
         assert status == 200;
-        abby.setTeamName("We");
-        status = joinTeam(code, "Alan", "We");
+        me.setTeamName("We");
+        status = joinTeam(code, "Billy", "We");
         assert status == 200;
-        alan.setTeamName("We");
-        status = joinTeam(code, "Emma", "They");
+        billy.setTeamName("We");
+        status = joinTeam(code, "Bobby", "They");
         assert status == 200;
-        emma.setTeamName("They");
-        status = joinTeam(code, "Henry", "They");
+        bobby.setTeamName("They");
+        status = joinTeam(code, "Joe", "They");
         assert status == 200;
-        henry.setTeamName("They");
+        joe.setTeamName("They");
         System.out.println("Settings have been set for pinochle....");
         status = callHandler("/start/" + code, "PUT");
         assert status == 200;
@@ -202,10 +202,10 @@ public class GameTest {
         System.out.println("Game code is " + code);
         assert code.length() == 5;
         List<Player> players = new ArrayList<>();
-        players.add(new Player("Abby"));
-        players.add(new Player("Alan"));
-        players.add(new Player("Emma"));
-        players.add(new Player("Henry"));
+        players.add(new Player("Me"));
+        players.add(new Player("Billy"));
+        players.add(new Player("Bobby"));
+        players.add(new Player("Joe"));
         for (Player p: players) {
             int status = callHandler("/join/" + code + "/" + p.getName(), "PUT");
             assert status == 200;

@@ -24,6 +24,7 @@ public class Game {
             'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
 
     private List<Player> players;
+    private Map<String, Player> playerNames;
     private int nextPlayer;
     private Card cardPlayed;
     private WayToPlay way;
@@ -56,6 +57,7 @@ public class Game {
         dbMapper = new DynamoDBMapper(ddb, mapperConfig);
         r = new Random();
         players = new ArrayList<>();
+        playerNames = new HashMap<>();
         started = false;
         trick = new ArrayList<>();
         trickPlayers = new ArrayList<>();
@@ -76,7 +78,13 @@ public class Game {
     @DynamoDBTypeConverted(converter = PlayerConverter.class)
     @DynamoDBAttribute(attributeName = "players")
     public List<Player> getPlayers() { return this.players; }
-    public void setPlayers(List<Player> players) { this.players = players; }
+    public void setPlayers(List<Player> players) {
+        this.players = players;
+        playerNames = new HashMap<>();
+        for (Player p: players) {
+            playerNames.put(p.getName(), p);
+        }
+    }
 
     @DynamoDBTypeConverted(converter = CardListConverter.class)
     @DynamoDBAttribute(attributeName = "draw pile")
@@ -229,17 +237,13 @@ public class Game {
             LOG.error(p.getName() + "attempted to join game after it started");
             throw new IllegalStateException("cannot join game after it has started");
         }
-        for (Player pl: players) { // speed up using map from names to players (if keyset contains the name, reject)
-            if (p.getName().equals(pl.getName())) {
-                throw new IllegalArgumentException("another player already has this name");
-            }
+        if (playerNames.containsKey(p.getName())) {
+            throw new IllegalArgumentException("another player already has this name");
         }
         LOG.info("Player " + p.getName() + " added");
         players.add(p);
+        playerNames.put(p.getName(), p);
     }
-
-    // TODO: contemplate allowing a list of cards to be passed in rather than a single card
-    // (esp. for showing cards)
 
     /**
      * Records the turn taken in the database
@@ -272,10 +276,6 @@ public class Game {
         if (how.equals(WayToPlay.TRICK) && !p.getHand().contains(card)) {
             LOG.error(p.getName() + " does not have " + card.toString());
             throw new IllegalArgumentException("Player " + p.getName() + " does not have " + card.toString());
-        }
-        if (!p.equals(getWhoseTurn())) {
-            LOG.error("not " + p.getName() + "'s turn");
-            throw new IllegalArgumentException("It is not " + p.getName() + "'s turn");
         }
         cardPlayed = card;
         way = how;
@@ -373,12 +373,7 @@ public class Game {
         if (!started) {
             throw new IllegalStateException("Game has not started yet");
         }
-        for (Player player : players) {
-            if (player.equals(p)) {
-                return player.getHand();
-            }
-        }
-        return null;
+        return playerNames.get(p.getName()).getHand();
     }
 
     /**
@@ -466,12 +461,7 @@ public class Game {
     @JsonIgnore
     @DynamoDBIgnore
     public Player getPlayer(String name) {
-        for (Player p: players) { // USE MAP
-            if (p.getName().equals(name)) {
-                return p;
-            }
-        }
-        return null;
+        return playerNames.get(name);
     }
 
     /**
