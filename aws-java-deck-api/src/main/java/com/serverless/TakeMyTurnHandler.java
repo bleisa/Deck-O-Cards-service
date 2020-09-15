@@ -35,9 +35,7 @@ public class TakeMyTurnHandler implements RequestHandler<Map<String, Object>, Ap
 					c = null;
 				}
 				WayToPlay how = (new WayToPlayConverter()).unconvert(howString);
-				Player p = g.getPlayer(pass);
-				Player turn = g.getPlayer(player);
-				g.takeTurn(turn, c, how, p);
+				g.takeTurn(player, c, how, pass);
 				g.save(g);
 				return ApiGatewayResponse.builder()
 						.setStatusCode(200)

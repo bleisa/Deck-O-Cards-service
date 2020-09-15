@@ -27,7 +27,7 @@ public class JoinGameHandler implements RequestHandler<Map<String, Object>, ApiG
 			String name = pieces[4];
 			Game g = (new Game()).getGame(code);
 			if (g != null) {
-				g.joinGame(new Player(name));
+				g.joinGame(name);
 				g.save(g);
 				Response responseBody = new Response("joined game successfully", input);
 				return ApiGatewayResponse.builder()

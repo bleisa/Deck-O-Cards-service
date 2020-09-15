@@ -21,19 +21,19 @@ public class JSONExperimentation {
     public void lessLearnJSON() throws IOException {
         // Instantiate object, put some values in
         Game g = new Game();
-        Player me = new Player("Abby");
-        g.joinGame(me);
-        g.joinGame(new Player("Alan"));
-        g.joinGame(new Player("Emma"));
-        g.joinGame(new Player("Henry"));
+        Player me = new Player("me1");
+        g.joinGame("me1");
+        g.joinGame("me2");
+        g.joinGame("me3");
+        g.joinGame("me4");
         int[] cards = {12, 12, 12, 12};
         Settings s = new Settings(cards, DeckType.PINOCHLE, false, false, true, false,
                 true, false, false, false, false, 4);
         g.setUp(s);
         g.startGame();
         g.deal();
-        me.setHand(g.getHand(me));
-        g.takeTurn(me, me.getHand().get(R.nextInt(me.getHand().size())), WayToPlay.TRICK, null);
+        me.setHand(g.getHand(me.getName()));
+        g.takeTurn(me.getName(), me.getHand().get(R.nextInt(me.getHand().size())), WayToPlay.TRICK, null);
         // Convert object to json
         ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
         String json = ow.writeValueAsString(g);
@@ -48,12 +48,12 @@ public class JSONExperimentation {
 
     @Test
     public void playerJSONdirectTest() throws JsonProcessingException {
-        List<Player> players = List.of(new Player("me1"), new Player("me2"),
-                new Player("me3"), new Player("me4"));
+        List<String> names = List.of("me1", "me2", "me3", "me4");
         Game g = new Game();
-        for (Player p: players) {
-            g.joinGame(p);
+        for (String name: names) {
+            g.joinGame(name);
         }
+        List<Player> players = g.getPlayers();
         int[] counts = {12, 12, 12, 12};
         Settings s = new Settings(counts, DeckType.PINOCHLE, false, false, true,
                 false, false, false, false, false, false,
@@ -73,7 +73,7 @@ public class JSONExperimentation {
                     Player p = players.get(i);
                     if (g.getWhoseTurn().equals(p)) {
                         Card c = p.getHand().get(R.nextInt(p.getHand().size()));
-                        g.takeTurn(p, c, WayToPlay.TRICK, null);
+                        g.takeTurn(p.getName(), c, WayToPlay.TRICK, null);
                         String json = ow.writeValueAsString(p);
                         System.out.println(json);
                         if (p.getHand().size() == 0) {

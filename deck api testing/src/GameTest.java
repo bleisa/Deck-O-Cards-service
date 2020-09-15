@@ -82,13 +82,13 @@ public class GameTest {
         String code = callHandlerResponse("/", "POST");
         System.out.println("Game code is " + code);
         assert code.length() == 5;
-        List<Player> players = new ArrayList<>();
-        players.add(new Player("Bobby"));
-        players.add(new Player("Billy"));
-        players.add(new Player("Joe"));
-        players.add(new Player("Me"));
-        for (Player p: players) {
-            int status = callHandler("/join/" + code + "/" + p.getName(), "PUT");
+        Map<String, Player> players = new HashMap<>();
+        players.put("Bobby", new Player("Bobby"));
+        players.put("Billy", new Player("Billy"));
+        players.put("Joe", new Player("Joe"));
+        players.put("Me", new Player("Me"));
+        for (String name: players.keySet()) {
+            int status = callHandler("/join/" + code + "/" + name, "PUT");
             assert status == 200;
         }
         System.out.println("Players have joined....");
@@ -112,9 +112,9 @@ public class GameTest {
         System.out.println("Hands have been dealt....");
         String jsonGame = callHandlerResponse("/" + code, "GET");
         Game g = new ObjectMapper().readValue(jsonGame, Game.class);
-        for (Player p: players) {
-            List<Card> hand = g.getPlayer(p.getName()).getHand();
-            p.setHand(hand);
+        for (String name: players.keySet()) {
+            List<Card> hand = g.getPlayer(name).getHand();
+            players.get(name).setHand(hand);
         }
         System.out.println("All players have their hands....");
         System.out.println("Beginning play...");
@@ -134,17 +134,17 @@ public class GameTest {
         String code = callHandlerResponse("/", "POST");
         System.out.println("Game code is " + code);
         assert code.length() == 5;
-        List<Player> players = new ArrayList<>();
+        Map<String, Player> players = new HashMap<>();
         Player me = new Player("Me");
         Player billy = new Player("Billy");
         Player bobby = new Player("Bobby");
         Player joe = new Player("Joe");
-        players.add(me);
-        players.add(billy);
-        players.add(bobby);
-        players.add(joe);
-        for (Player p: players) {
-            int status = callHandler("/join/" + code + "/" + p.getName(), "PUT");
+        players.put("Me", me);
+        players.put("Billy", billy);
+        players.put("Bobby", bobby);
+        players.put("Joe", joe);
+        for (String name: players.keySet()) {
+            int status = callHandler("/join/" + code + "/" + name, "PUT");
             assert status == 200;
         }
         System.out.println("Players have joined....");
@@ -171,11 +171,11 @@ public class GameTest {
         status = callHandler("/deal/" + code, "PUT");
         assert status == 200;
         System.out.println("Hands have been dealt....");
-        for (Player p: players) {
+        for (String name: players.keySet()) {
             String jsonGame = callHandlerResponse("/" + code, "GET");
             Game g = new ObjectMapper().readValue(jsonGame, Game.class);
-            List<Card> hand = g.getPlayer(p.getName()).getHand();
-            p.setHand(hand);
+            List<Card> hand = g.getPlayer(name).getHand();
+            players.get(name).setHand(hand);
         }
         System.out.println("All players have their hands....");
         System.out.println("Beginning play...");
@@ -201,13 +201,13 @@ public class GameTest {
         String code = callHandlerResponse("/", "POST");
         System.out.println("Game code is " + code);
         assert code.length() == 5;
-        List<Player> players = new ArrayList<>();
-        players.add(new Player("Me"));
-        players.add(new Player("Billy"));
-        players.add(new Player("Bobby"));
-        players.add(new Player("Joe"));
-        for (Player p: players) {
-            int status = callHandler("/join/" + code + "/" + p.getName(), "PUT");
+        Map<String, Player> players = new HashMap<>();
+        players.put("Me", new Player("Me"));
+        players.put("Billy", new Player("Billy"));
+        players.put("Bobby", new Player("Bobby"));
+        players.put("Joe", new Player("Joe"));
+        for (String name: players.keySet()) {
+            int status = callHandler("/join/" + code + "/" + name, "PUT");
             assert status == 200;
         }
         System.out.println("Players have joined....");
@@ -221,11 +221,11 @@ public class GameTest {
         status = callHandler("/deal/" + code, "PUT");
         assert status == 200;
         System.out.println("Hands have been dealt....");
-        for (Player p: players) {
+        for (String name: players.keySet()) {
             String jsonGame = callHandlerResponse("/" + code, "GET");
             Game g = new ObjectMapper().readValue(jsonGame, Game.class);
-            List<Card> hand = g.getPlayer(p.getName()).getHand();
-            p.setHand(hand);
+            List<Card> hand = g.getPlayer(name).getHand();
+            players.get(name).setHand(hand);
         }
         System.out.println("All players have their hands....");
         System.out.println("Beginning play...");
@@ -237,20 +237,21 @@ public class GameTest {
         System.out.println("Test successful");
     }
 
-    private void passPinochleHand(List<Player> players, String code, CardConverter cc) throws IOException {
+    private void passPinochleHand(Map<String, Player> players, String code, CardConverter cc) throws IOException {
         int[] handCounts = {16, 8, 16, 8};
         while (handCounts[0] > 12 || handCounts[1] < 12 || handCounts[2] > 12 || handCounts[3] < 12) {
-            for (Player p: players) {
+            for (String name: players.keySet()) {
+                Player p = players.get(name);
                 String jsonGame = callHandlerResponse("/" + code, "GET");
                 Game g = new ObjectMapper().readValue(jsonGame, Game.class);
-                if (g.getWhoseTurn().equals(p) && g.getHand(p).size() > 12) {
+                if (g.getWhoseTurn().equals(p) && g.getHand(name).size() > 12) {
                     Player teammate = null;
-                    System.out.println(p.getName() + " is passing....");
+                    System.out.println(name + " is passing....");
                     Card c = p.getHand().get(R.nextInt(p.getHand().size()));
                     String card = cc.convert(c);
-                    for (Player p2: players) {
-                        if (!p2.equals(p) && p2.getTeamName().equals(p.getTeamName())) {
-                            teammate = p2;
+                    for (String p2: players.keySet()) {
+                        if (!p2.equals(name) && players.get(p2).getTeamName().equals(p.getTeamName())) {
+                            teammate = players.get(p2);
                             break;
                         }
                     }
@@ -282,34 +283,35 @@ public class GameTest {
         }
     }
 
-    private void meldPinochleHand(List<Player> players, String code, CardConverter cc) throws IOException {
-        for (Player p: players) {
+    private void meldPinochleHand(Map<String, Player> players, String code, CardConverter cc) throws IOException {
+        for (String name: players.keySet()) {
+            Player p = players.get(name);
             String jsonGame = callHandlerResponse("/" + code, "GET");
             Game g = new ObjectMapper().readValue(jsonGame, Game.class);
             if (g.getWhoseTurn().equals(p)) {
-                System.out.println(p.getName() + " is placing meld....");
+                System.out.println(name + " is placing meld....");
                 Card c = p.getHand().get(R.nextInt(p.getHand().size()));
                 String card = cc.convert(c);
-                int status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/SHOW/null/" + p.getName(), "PUT");
+                int status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/SHOW/null/" + name, "PUT");
                 assert status == 200;
             }
             jsonGame = callHandlerResponse("/" + code, "GET");
             g = new ObjectMapper().readValue(jsonGame, Game.class);
-            System.out.println(p.getName() + " is melding " + g.getPlayer(p.getName()).getShown());
+            System.out.println(name + " is melding " + g.getPlayer(name).getShown());
         }
-        for (Player p: players) {
+        for (String name: players.keySet()) {
             String jsonGame = callHandlerResponse("/" + code, "GET");
             Game g = new ObjectMapper().readValue(jsonGame, Game.class);
-            if (g.getWhoseTurn().equals(p)) {
-                Card c = g.getPlayer(p.getName()).getShown().get(0);
+            if (g.getWhoseTurn().equals(players.get(name))) {
+                Card c = g.getPlayer(name).getShown().get(0);
                 String card = cc.convert(c);
-                int status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/PICKUP/null/" + p.getName(), "PUT");
+                int status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/PICKUP/null/" + name, "PUT");
                 assert status == 200;
             }
         }
     }
 
-    private void playTrumpHand(List<Player> players, String code, CardConverter cc, String trump) throws IOException {
+    private void playTrumpHand(Map<String, Player> players, String code, CardConverter cc, String trump) throws IOException {
         System.out.println(trump + " is trump");
         int status = callHandler("/trump/" + code + "/" + trump, "PUT");
         assert status == 200;
@@ -329,21 +331,21 @@ public class GameTest {
             System.out.println(p.getName() + " played " + c.toString() + " in a trick....");
             jsonGame = callHandlerResponse("/" + code, "GET");
             g = new ObjectMapper().readValue(jsonGame, Game.class);
-            p.setHand(g.getHand(p));
+            p.setHand(g.getHand(p.getName()));
             p.setCollected(g.getPlayer(p.getName()).getCollected());
             System.out.println("\t" + p.getName() + "'s hand is now " + p.getHand());
             System.out.println("\t" + p.getName() + " has collected " + p.getCollected());
         }
     }
 
-    private void scorePinochleHand(List<Player> players, String code) throws IOException {
-        for (Player p: players) {
+    private void scorePinochleHand(Map<String, Player> players, String code) throws IOException {
+        for (String name: players.keySet()) {
             int points = R.nextInt(100);
-            int status = callHandler("/score/" + code + "/" + p.getName() + "/" + points, "PUT");
+            int status = callHandler("/score/" + code + "/" + name + "/" + points, "PUT");
             assert status == 200;
             String jsonGame = callHandlerResponse("/" + code, "GET");
             Game g = new ObjectMapper().readValue(jsonGame, Game.class);
-            System.out.println(p.getName() + " has " + g.getPlayer(p.getName()).getPoints());
+            System.out.println(name + " has " + g.getPlayer(name).getPoints());
         }
     }
 

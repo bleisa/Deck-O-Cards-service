@@ -24,7 +24,7 @@ public class JoinTeamHandler implements RequestHandler<Map<String, Object>, ApiG
 			String teamName = pieces[5];
 			Game g = (new Game()).getGame(code);
 			if (g != null) {
-				g.joinTeam(g.getPlayer(playerName), teamName);
+				g.joinTeam(playerName, teamName);
 				g.save(g);
 				Response response = new Response("joined team successfully", input);
 				return ApiGatewayResponse.builder()

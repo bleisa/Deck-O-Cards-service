@@ -26,7 +26,7 @@ public class ScoreHandler implements RequestHandler<Map<String, Object>, ApiGate
 			Game g = (new Game()).getGame(code);
 			if (g != null) {
 				int pointsInt = unconvertInt(points);
-				g.score(g.getPlayer(name), pointsInt);
+				g.score(name, pointsInt);
 				g.save(g);
 				Response responseBody = new Response("added score successfully", input);
 				return ApiGatewayResponse.builder()

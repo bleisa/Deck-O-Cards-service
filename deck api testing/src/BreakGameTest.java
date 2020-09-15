@@ -1,4 +1,3 @@
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serverless.dal.*;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -10,17 +9,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Let's break this
  */
 
 public class BreakGameTest {
-    private static final String CODE = "IGIHC"; // current game object being used for testing
-    private static final Random R = new Random();
+    private static final String CODE = "MALQI"; // current game object being used for testing
 
     @Ignore
     @Test
@@ -30,7 +26,6 @@ public class BreakGameTest {
     }
 
     // -- same player names
-    // -- bad player names - see note in Player
     @Test
     public void joinTwoOfSameHTTPTest() throws IOException {
         int status = callHandler("/join/" + CODE + "/Emma", "PUT");
@@ -61,7 +56,7 @@ public class BreakGameTest {
         // -- deal before started
         status = callHandler("/deal/" + code, "PUT");
         assert status == 500;
-        List<String> names = List.of("Abby", "Alan", "Emma", "Henry");
+        List<String> names = List.of("Billy", "Bob", "Joe", "Me");
         for (String name: names) {
             status = callHandler("/join/" + code + "/" + name, "PUT");
             assert status == 200;
@@ -169,6 +164,6 @@ public class BreakGameTest {
         SettingsConverter sc = new SettingsConverter();
         Settings settings = new Settings(counts, DeckType.PINOCHLE, skip, false, true,
                 pass, true, false, true, false, true, 4);
-        return URLEncoder.encode(sc.convert(settings));
+        return URLEncoder.encode(sc.convert(settings), StandardCharsets.UTF_8);
     }
 }

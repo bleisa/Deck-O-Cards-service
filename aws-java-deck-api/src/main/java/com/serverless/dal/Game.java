@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,7 +26,9 @@ public class Game {
 
     private List<Player> players;
     private Map<String, Player> playerNames;
-    private int nextPlayer;
+    private String nextPlayer;
+    private int nextPlayerIndex;
+    private Map<String, Integer> playerIndices;
     private Card cardPlayed;
     private WayToPlay way;
     private String code;
@@ -62,6 +65,7 @@ public class Game {
         trick = new ArrayList<>();
         trickPlayers = new ArrayList<>();
         count = 0;
+        nextPlayerIndex = 0;
         discard = new ArrayList<>();
         draw = new ArrayList<>();
         cardPlayed = null;
@@ -81,8 +85,14 @@ public class Game {
     public void setPlayers(List<Player> players) {
         this.players = players;
         playerNames = new HashMap<>();
-        for (Player p: players) {
+        playerIndices = new HashMap<>();
+        for (int i = 0; i < players.size(); i++) {
+            Player p = players.get(i);
             playerNames.put(p.getName(), p);
+            playerIndices.put(p.getName(), i);
+        }
+        if (nextPlayerIndex < 0) { // in case nextPlayer was already processed
+            nextPlayerIndex = playerIndices.get(nextPlayer);
         }
     }
 
@@ -111,8 +121,15 @@ public class Game {
     public void setCount(int count) { this.count = count; }
 
     @DynamoDBAttribute(attributeName = "next_player")
-    public int getNextPlayer() { return nextPlayer; }
-    public void setNextPlayer(int index) { nextPlayer = index; }
+    public String getNextPlayer() { return nextPlayer; }
+    public void setNextPlayer(String nextPlayer) {
+        this.nextPlayer = nextPlayer;
+        if (playerIndices != null && nextPlayer != null) { // in case the players have not yet been processed
+            nextPlayerIndex = playerIndices.get(nextPlayer);
+        } else {
+            nextPlayerIndex = -1;
+        }
+    }
 
     @DynamoDBAttribute(attributeName = "started")
     public boolean getStarted() { return started; }
@@ -216,33 +233,35 @@ public class Game {
         }
     }
 
-    // TODO: note that currently with only remembering index, if client's list is not same order, will be wrong
-
     /**
      * @return the player whose turn it is
      */
     @JsonIgnore
     @DynamoDBIgnore
     public Player getWhoseTurn() {
-        return players.get(nextPlayer);
+        return getPlayer(nextPlayer);
     }
 
     /**
      * adds the player to this game
      * @throws IllegalStateException if game has started
-     * @param p the player to be added - no other player can have this player's name
+     * @param name the name of the player to be added - no other player can have this name
      */
-    public void joinGame(Player p) {
+    public void joinGame(String name) {
         if (started) {
-            LOG.error(p.getName() + "attempted to join game after it started");
+            LOG.error(name + "attempted to join game after it started");
             throw new IllegalStateException("cannot join game after it has started");
         }
-        if (playerNames.containsKey(p.getName())) {
+        if (playerNames.containsKey(name)) {
             throw new IllegalArgumentException("another player already has this name");
         }
-        LOG.info("Player " + p.getName() + " added");
+        LOG.info("Player " + name + " added");
+        Player p = new Player(name);
         players.add(p);
-        playerNames.put(p.getName(), p);
+        playerNames.put(name, p);
+        if (players.size() == 1) {
+            nextPlayer = name;
+        }
     }
 
     /**
@@ -250,12 +269,14 @@ public class Game {
      * @throws IllegalStateException if the game has not started yet
      * @throws IllegalArgumentException if the way the card was played has not been enabled for this game
      * or if how is TRICK the player whose turn it is does not have the card that was played
-     * @param p the player who played
+     * @param played the name of the player who played
      * @param card the card that was played
      * @param how the way that it was played
-     * @param pass if the card was passed, the player it was passed to - cannot be null if how is PASS
+     * @param passedTo if the card was passed, the name of the player it was passed to - cannot be null if how is PASS
      */
-    public void takeTurn(Player p, Card card, WayToPlay how, Player pass) {
+    public void takeTurn(String played, Card card, WayToPlay how, String passedTo) {
+        Player p = getPlayer(played);
+        Player pass = getPlayer(passedTo);
         if (!started) {
             LOG.error("attempted to take turn before game started");
             throw new IllegalStateException("Game has not started yet");
@@ -282,11 +303,12 @@ public class Game {
         if (!(how.equals(WayToPlay.DRAW) || how.equals(WayToPlay.PICKUP))) {
             p.getHand().remove(card);
         }
-        if (nextPlayer == players.size() - 1) {
-            nextPlayer = 0;
+        if (nextPlayerIndex == players.size() - 1) {
+            nextPlayerIndex = 0;
         } else {
-            nextPlayer++;
+            nextPlayerIndex++;
         }
+        nextPlayer = players.get(nextPlayerIndex).getName();
         if (how.equals(WayToPlay.PASS)) {
             pass.getHand().add(card);
             if (LOG.getLevel().equals(Level.DEBUG)) {
@@ -359,21 +381,19 @@ public class Game {
         }
     }
 
-    // actually not a necessary method
-    // also could be sped up using map
     /**
      * retrieves the hand of the player (so it can be updated in the param player object)
      * @throws IllegalStateException if game has not started yet
-     * @param p the player whose hand is to be found - cannot be null
+     * @param name the name of the player whose hand is to be found
      * @return the hand of the player, or null if the player is not found
      */
     @JsonIgnore
     @DynamoDBIgnore
-    public List<Card> getHand(Player p) {
+    public List<Card> getHand(String name) {
         if (!started) {
             throw new IllegalStateException("Game has not started yet");
         }
-        return playerNames.get(p.getName()).getHand();
+        return getPlayer(name).getHand();
     }
 
     /**
@@ -443,12 +463,8 @@ public class Game {
         if (LOG.getLevel().equals(Level.DEBUG)) {
             LOG.debug(trickPlayers.get(index).getName() + " collected the trick: " + trick);
         }
-        for (int i = 0; i < players.size(); i++) { // speed up using map
-            if (players.get(i).equals(trickPlayers.get(index))) {
-                nextPlayer = i;
-                break;
-            }
-        }
+        nextPlayer = trickPlayers.get(index).getName();
+        nextPlayerIndex = playerIndices.get(nextPlayer);
         trick = new ArrayList<>();
         trickPlayers = new ArrayList<>();
         count = 0;
@@ -490,10 +506,11 @@ public class Game {
     /**
      * adds the given number of points to the player's score
      * @throws IllegalStateException if game has not started yet
-     * @param p the player whose score is to be added to - cannot be null
+     * @param name the name of the player whose score is to be added to - cannot be null
      * @param points the number of points to be added (can be positive or negative)
      */
-    public void score(Player p, int points) {
+    public void score(String name, int points) {
+        Player p = getPlayer(name);
         if (p == null) {
             throw new IllegalArgumentException("Player cannot be null");
         }
@@ -505,10 +522,11 @@ public class Game {
 
     /**
      * adds a player to a team
-     * @param p the player to be added
+     * @param name the name of the player to be added
      * @param team the team they are joining
      */
-    public void joinTeam(Player p, String team) {
+    public void joinTeam(String name, String team) {
+        Player p = getPlayer(name);
         if (p == null) {
             throw new IllegalArgumentException("Player cannot be null");
         }

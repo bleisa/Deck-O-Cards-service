@@ -9,9 +9,9 @@ import java.util.*;
  */
 
 public class GameDirectTest {
-    private static final String PINOCHLE_CODE = "AGZPV"; // for a standard pinochle game with four players
+    private static final String PINOCHLE_CODE = "HTLXC"; // for a standard pinochle game with four players
     private static final Random R = new Random();
-    private static final String PASS_CODE = "JPFPW"; // for a pass pinochle game with six players
+    private static final String PASS_CODE = "HUAMG"; // for a pass pinochle game with six players
 
     @Ignore
     @Test
@@ -24,52 +24,44 @@ public class GameDirectTest {
     @Test
     public void joinPassGameDirectTest() {
         Game g = new Game().getGame(PASS_CODE);
-        List<Player> players = new ArrayList<>();
-        Player abby = new Player("Abby");
-        Player alan = new Player("Alan");
-        Player emma = new Player("Emma");
-        Player henry = new Player("Henry");
-        players.add(abby);
-        players.add(alan);
-        players.add(emma);
-        players.add(henry);
-        for (Player p: players) {
-            g.joinGame(p);
+        List<String> names = List.of("me1", "me2", "me3", "me4");
+        for (String name: names) {
+            g.joinGame(name);
         }
+        Player me1 = g.getPlayer("me1");
+        Player me2 = g.getPlayer("me2");
+        Player me3 = g.getPlayer("me3");
+        Player me4 = g.getPlayer("me4");
         int[] counts = {16, 8, 16, 8};
         Settings settings = new Settings(counts, DeckType.PINOCHLE, true, false, true, true,
                 true, false, true, false, true,4);
         g.setUp(settings);
-        g.joinTeam(abby, "We");
-        g.joinTeam(alan, "We");
-        g.joinTeam(emma, "They");
-        g.joinTeam(henry, "They");
+        g.joinTeam(me1.getName(), "We");
+        g.joinTeam(me2.getName(), "We");
+        g.joinTeam(me3.getName(), "They");
+        g.joinTeam(me4.getName(), "They");
         g.save(g);
     }
 
     @Test
     public void joinGameDirectTest() {
         Game g = new Game().getGame(PINOCHLE_CODE);
-        List<Player> players = new ArrayList<>();
-        Player abby = new Player("Abby");
-        Player alan = new Player("Alan");
-        Player emma = new Player("Emma");
-        Player henry = new Player("Henry");
-        players.add(abby);
-        players.add(alan);
-        players.add(emma);
-        players.add(henry);
-        for (Player p: players) {
-            g.joinGame(p);
+        List<String> names = List.of("me1", "me2", "me3", "me4");
+        for (String name: names) {
+            g.joinGame(name);
         }
+        Player me1 = g.getPlayer("me1");
+        Player me2 = g.getPlayer("me2");
+        Player me3 = g.getPlayer("me3");
+        Player me4 = g.getPlayer("me4");
         int[] counts = {12, 12, 12, 12};
         Settings settings = new Settings(counts, DeckType.PINOCHLE, false, false, true, false,
                 true, false, true, false, true,4);
         g.setUp(settings);
-        g.joinTeam(abby, "We");
-        g.joinTeam(alan, "We");
-        g.joinTeam(emma, "They");
-        g.joinTeam(henry, "They");
+        g.joinTeam(me1.getName(), "We");
+        g.joinTeam(me2.getName(), "We");
+        g.joinTeam(me3.getName(), "They");
+        g.joinTeam(me4.getName(), "They");
         g.save(g);
     }
 
@@ -107,7 +99,7 @@ public class GameDirectTest {
     @Test
     public void getHandDirectTest() {
         Game g = new Game().getGame(PINOCHLE_CODE);
-        List<Card> hand = g.getHand(new Player("Abby"));
+        List<Card> hand = g.getHand("me1");
         System.out.println(hand);
     }
 
@@ -115,7 +107,7 @@ public class GameDirectTest {
     @Test
     public void takeTurnDirectTest() {
         Game g = new Game().getGame(PINOCHLE_CODE);
-        g.takeTurn(g.getPlayer("Henry"), new Card(Suit.SPADES, 9), WayToPlay.TRICK, null);
+        g.takeTurn("me1", new Card(Suit.SPADES, 9), WayToPlay.TRICK, null);
         g.save(g);
     }
 
@@ -124,14 +116,14 @@ public class GameDirectTest {
         Game g = new Game().getGame(PINOCHLE_CODE);
         g.deal();
         g.save(g);
-        Player me = new Player("Abby");
-        List<Card> hand = g.getHand(me);
+        Player me = new Player("me1");
+        List<Card> hand = g.getHand("me1");
         me.setHand(hand);
-        System.out.println("Abby's hand is " + hand);
+        System.out.println("My hand is " + hand);
         Card c = me.getHand().get(R.nextInt(me.getHand().size()));
         System.out.println("I will play the " + c.toString());
-        g.takeTurn(me, c, WayToPlay.TRICK, null);
-        hand = g.getHand(me);
+        g.takeTurn(me.getName(), c, WayToPlay.TRICK, null);
+        hand = g.getHand("me1");
         System.out.println("My hand is now " + hand);
     }
 
@@ -140,23 +132,23 @@ public class GameDirectTest {
         Game g = new Game().getGame(PASS_CODE);
         g.deal();
         g.save(g);
-        Player abby = new Player("Abby");
-        abby.setTeamName("We");
-        Player alan = new Player("Alan");
-        alan.setTeamName("We");
-        Player emma = new Player("Emma");
-        emma.setTeamName("They");
-        Player henry = new Player("Henry");
-        henry.setTeamName("They");
+        Player billy = new Player("me1");
+        billy.setTeamName("We");
+        Player bob = new Player("me2");
+        bob.setTeamName("We");
+        Player joe = new Player("me3");
+        joe.setTeamName("They");
+        Player me = new Player("me4");
+        me.setTeamName("They");
         List<Player> players = new ArrayList<>();
-        players.add(abby);
-        players.add(alan);
-        players.add(emma);
-        players.add(henry);
+        players.add(billy);
+        players.add(bob);
+        players.add(joe);
+        players.add(me);
         int[] handCounts = new int[4];
         for (int i = 0; i < 4; i++) {
             Player p = players.get(i);
-            List<Card> hand = g.getHand(p);
+            List<Card> hand = g.getHand(p.getName());
             p.setHand(hand);
             handCounts[i] = p.getHand().size();
             System.out.println(p.getName() + "'s hand is " + hand);
@@ -175,7 +167,7 @@ public class GameDirectTest {
                         }
                     }
                     assert teammate != null;
-                    g.takeTurn(p, c, WayToPlay.PASS, teammate);
+                    g.takeTurn(p.getName(), c, WayToPlay.PASS, teammate.getName());
                     for (int i = 0; i < players.size(); i++) {
                         Player pl = players.get(i);
                         if (pl.equals(p)) {
@@ -189,7 +181,7 @@ public class GameDirectTest {
                     p.setHand(g.getPlayer(p.getName()).getHand());
                     System.out.println(p.getName() + "'s hand is now " + p.getHand());
                 } else if (g.getWhoseTurn().equals(p)){
-                    g.takeTurn(p, null, WayToPlay.SKIP, null);
+                    g.takeTurn(p.getName(), null, WayToPlay.SKIP, null);
                     System.out.println(p.getName() + " is skipping their turn");
                 }
             }
@@ -201,17 +193,17 @@ public class GameDirectTest {
         Game g = new Game().getGame(PINOCHLE_CODE);
         g.deal();
         g.save(g);
-        Player abby = new Player("Abby");
-        Player alan = new Player("Alan");
-        Player emma = new Player("Emma");
-        Player henry = new Player("Henry");
+        Player me1 = new Player("me1");
+        Player me2 = new Player("me2");
+        Player me3 = new Player("me3");
+        Player me4 = new Player("me4");
         List<Player> players = new ArrayList<>();
-        players.add(abby);
-        players.add(alan);
-        players.add(emma);
-        players.add(henry);
+        players.add(me1);
+        players.add(me2);
+        players.add(me3);
+        players.add(me4);
         for (Player p: players) {
-            List<Card> hand = g.getHand(p);
+            List<Card> hand = g.getHand(p.getName());
             p.setHand(hand);
             System.out.println(p.getName() + "'s hand is " + hand);
         }
@@ -220,13 +212,13 @@ public class GameDirectTest {
         for (int i = 0; i < 4; i++) {
             Player p = g.getWhoseTurn();
             Card c = p.getHand().get(R.nextInt(p.getHand().size()));
-            g.takeTurn(p, c, WayToPlay.SHOW, null);
+            g.takeTurn(p.getName(), c, WayToPlay.SHOW, null);
             System.out.println(p.getName() + " has " + c + " to meld");
         }
         for (int i = 0; i < 4; i++) {
             Player p = g.getWhoseTurn();
             Card c = p.getShown().get(0);
-            g.takeTurn(p, c, WayToPlay.PICKUP, null);
+            g.takeTurn(p.getName(), c, WayToPlay.PICKUP, null);
             System.out.println(p.getName() + " picked " + c + " back up");
         }
         for (int i = 0; i < 48; i++) {
@@ -235,7 +227,7 @@ public class GameDirectTest {
             }
             Player p = g.getWhoseTurn();
             Card c = p.getHand().get(R.nextInt(p.getHand().size()));
-            g.takeTurn(p, c, WayToPlay.TRICK, null);
+            g.takeTurn(p.getName(), c, WayToPlay.TRICK, null);
             System.out.println(p.getName() + " played " + c);
             System.out.println("\tTheir hand is now " + p.getHand());
             System.out.println("\tThey have collected " + p.getCollected());
