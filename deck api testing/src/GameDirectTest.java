@@ -11,7 +11,7 @@ import java.util.*;
 public class GameDirectTest {
     private static final String PINOCHLE_CODE = "HTLXC"; // for a standard pinochle game with four players
     private static final Random R = new Random();
-    private static final String PASS_CODE = "HUAMG"; // for a pass pinochle game with six players
+    private static final String PASS_CODE = "HUAMG"; // for a pass pinochle game with four players
 
     @Ignore
     @Test
