@@ -23,6 +23,7 @@ public class GameTest {
     private static final Random R = new Random();
 
     // TODO: test discard, draw (w/ rummy)
+    // TODO: test euchre deck
 
     @Test
     public void sampleRummyGameTest() throws IOException {
@@ -35,13 +36,14 @@ public class GameTest {
         JsonNode gameNode = new ObjectMapper().readTree(jsonGame);
         Map<String, List<Card>> hands = getHands(gameNode, players);
         int first = gameNode.get("nextPlayer").asInt();
-        System.out.println("Hands have been retrieved....");
         System.out.println("Beginning play....");
         // TODO: playRummyHand(players, code, hands, first);
         scoreHand(players, code);
         endGame(code);
     }
 
+    // check that teams, points, pinochle trick collection, showing cards and picking back up,
+    // trump, deleting a game work
     @Test
     public void samplePinochleGameTest() throws IOException {
         String code = createGame("pinochle");
@@ -64,6 +66,7 @@ public class GameTest {
         endGame(code);
     }
 
+    // check that passing cards between players works
     @Test
     public void samplePassPinochleGameTest() throws IOException {
         String code = createGame("pass pinochle");
@@ -89,10 +92,10 @@ public class GameTest {
     }
 
     private int joinTeam(String code, String playerName, String teamName) throws IOException {
-        int status = callHandler("/team/" + code + "/" + playerName + "/" + teamName, "PUT");
-        return status;
+        return callHandler("/team/" + code + "/" + playerName + "/" + teamName, "PUT");
     }
 
+    // check that poker deck works with trick collection
     @Test
     public void sampleHeartsGameTest() throws IOException {
         String code = createGame("hearts");

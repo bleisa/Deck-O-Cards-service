@@ -5,6 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.*;
 
+/**
+ * A Player is a mutable representation of a player in a card game. A Player has a name, a hand
+ * of cards, a score, and an optional team name.
+ */
+
 public class Player implements Serializable {
     private List<Card> hand;
     private final String name;
@@ -14,7 +19,8 @@ public class Player implements Serializable {
     private String teamName;
 
     /**
-     * Constructs a new Player object
+     * Constructs a new Player object with no cards, points, or team
+     *
      * @param name the name of the player - cannot be null or contain /
      */
     public Player(@JsonProperty("name")String name) {
@@ -31,74 +37,92 @@ public class Player implements Serializable {
 
 
     /**
+     * Returns the name of the player
+     *
      * @return the name of the player
      */
     public String getName() { return name; }
 
     /**
-     * Setter for field hand
+     * Sets this player's hand
+     *
      * @param hand the list of cards that the hand is set to
      */
     public void setHand(List<Card> hand) { this.hand = hand; }
 
     /**
+     * Returns the hand of this player
+     *
      * @return the hand of this player
      */
     public List<Card> getHand() { return hand; }
 
     /**
-     * @return a list of the cards that have been collected by this player
+     * Returns a list of the cards that this player has collected (i.e. through winning tricks)
+     *
+     * @return the cards that have been collected by this player
      */
     public List<Card> getCollected() {return collected; }
 
     /**
-     * Setter for field collected
-     * @param collected the list of cards for collected to be set to
+     * Sets the list of cards that this player has collected
+     *
+     * @param collected the new list of cards this player has collected
      */
     public void setCollected(List<Card> collected) { this.collected = collected; }
 
     /**
-     * @return the list of cards currently "owned" by this player but being shown to all
-     * other players
+     * Returns the cards this player is allowing all other players to view
+     *
+     * @return the list of cards on view
      */
     public List<Card> getShown() { return shown; }
 
     /**
-     * Sets the list of cards currently being shown by this player
+     * Sets the cards that this player is showing to other players
+     *
      * @param shown the list of cards to be set to
      */
     public void setShown(List<Card> shown) { this.shown = shown; }
 
     /**
+     * Returns this player's score
+     *
      * @return the number of points this player has
      */
     public int getPoints() { return points; }
 
     /**
-     * sets this player's points
+     * Sets this player's score
+     *
      * @param points the number of points to be given to this player
      */
     public void setPoints(int points) { this.points = points; }
 
     /**
-     * adds points to this player's current points
-     * @param points the number of points to be given to this player
+     * Adds points to this player's current points
+     *
+     * @param points the number of points to be given to this player (can be positive or negative)
      */
     public void addPoints(int points) { this.points += points; }
 
     /**
+     * Returns the team this player is one
+     *
      * @return the name of the team this player is on; null if none
      */
     public String getTeamName() { return teamName; }
 
     /**
-     * sets this player's team
+     * Sets this player's team name
+     *
      * @param teamName the name of the team this player is joining
      */
     public void setTeamName(String teamName) { this.teamName = teamName; }
 
     /**
-     * two players are equal if they have the same name
+     * Two players are equal if they have the same name
+     *
      * @param o the object to be compared
      * @return whether the object equals this player
      */
@@ -112,6 +136,6 @@ public class Player implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(hand, name);
+        return Objects.hash(name);
     }
 }

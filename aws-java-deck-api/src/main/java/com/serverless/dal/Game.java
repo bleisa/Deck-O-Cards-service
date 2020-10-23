@@ -6,12 +6,17 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.*;
+
+/**
+ * Game is a mutable object representing the state of a card game. The state consists of the Players,
+ * the Settings, whose turn it is to play, any cards that have been discarded (if applicable), any cards
+ * in the draw pile (if applicable), and a join code unique to each Game.
+ */
 
 @DynamoDBTable(tableName = "PLACEHOLDER")
 public class Game {
@@ -27,7 +32,6 @@ public class Game {
     private List<Player> players;
     private Map<String, Player> playerNames;
     private String nextPlayer;
-    private int nextPlayerIndex;
     private Map<String, Integer> playerIndices;
     private Card cardPlayed;
     private WayToPlay way;
@@ -50,6 +54,9 @@ public class Game {
 
     private final Random r;
 
+    /**
+     * Constructs a game with a join code but no players, no settings, and no discard or draw piles
+     */
     public Game() {
         DynamoDBMapperConfig mapperConfig = DynamoDBMapperConfig.builder()
                 .withTableNameOverride(new DynamoDBMapperConfig.TableNameOverride(GAMES_TABLE_NAME))
@@ -65,7 +72,6 @@ public class Game {
         trick = new ArrayList<>();
         trickPlayers = new ArrayList<>();
         count = 0;
-        nextPlayerIndex = 0;
         discard = new ArrayList<>();
         draw = new ArrayList<>();
         cardPlayed = null;
@@ -90,9 +96,6 @@ public class Game {
             Player p = players.get(i);
             playerNames.put(p.getName(), p);
             playerIndices.put(p.getName(), i);
-        }
-        if (nextPlayerIndex < 0) { // in case nextPlayer was already processed
-            nextPlayerIndex = playerIndices.get(nextPlayer);
         }
     }
 
@@ -124,11 +127,6 @@ public class Game {
     public String getNextPlayer() { return nextPlayer; }
     public void setNextPlayer(String nextPlayer) {
         this.nextPlayer = nextPlayer;
-        if (playerIndices != null && nextPlayer != null) { // in case the players have not yet been processed
-            nextPlayerIndex = playerIndices.get(nextPlayer);
-        } else {
-            nextPlayerIndex = -1;
-        }
     }
 
     @DynamoDBAttribute(attributeName = "started")
@@ -159,9 +157,9 @@ public class Game {
 
     /**
      * Retrieves the game with the given code from the DynamoDB database; returns null
-     * if it does not exist
+     * if it is not found
      * @param code the entry code for the desired game - cannot be null;
-     * @return the game with this code
+     * @return the game with this code, or null if not found
      */
     public Game getGame(String code) {
         if (code == null) {
@@ -184,7 +182,8 @@ public class Game {
     }
 
     /**
-     * @return a list of all the games;
+     * returns a list of all games currently in existence
+     * @return a list of all the games
      */
     public List<Game> listGames() {
         DynamoDBScanExpression scanExp = new DynamoDBScanExpression();
@@ -234,6 +233,7 @@ public class Game {
     }
 
     /**
+     * returns the player who should take their turn next
      * @return the player whose turn it is
      */
     @JsonIgnore
@@ -265,11 +265,17 @@ public class Game {
     }
 
     /**
-     * Records the turn taken in the database
+     * Updates the game, moving cards into players' hands or discard piles as specified by the parameter how
+     * Sets whose turn to play it is to the player immediately after the player who played
+     * If there is a draw pile and it is empty, shuffles and restarts it
+     * If there are tricks and the number of cards on the trick equals the number of players, assigns the trick
+     * to the player who played the highest card on it - see collectTrick documentation for details
+     *
      * @throws IllegalStateException if the game has not started yet
      * @throws IllegalArgumentException if the way the card was played has not been enabled for this game
-     * or if how is TRICK the player whose turn it is does not have the card that was played
-     * @param played the name of the player who played
+     * or if the player who took the turn does not have the card that was played in their hand and the card
+     * is supposed to be played from their hand (how = DISCARD, PASS, SHOW, or TRICK)
+     * @param played the name of the player who took a turn
      * @param card the card that was played
      * @param how the way that it was played
      * @param passedTo if the card was passed, the name of the player it was passed to - cannot be null if how is PASS
@@ -294,7 +300,8 @@ public class Game {
             LOG.error("player to whom to pass not specified");
             throw new IllegalArgumentException("Please specify to whom to pass");
         }
-        if (how.equals(WayToPlay.TRICK) && !p.getHand().contains(card)) {
+        if ((how.equals(WayToPlay.DISCARD) || how.equals(WayToPlay.TRICK)
+                || how.equals(WayToPlay.PASS) || how.equals(WayToPlay.SHOW)) && !p.getHand().contains(card)) {
             LOG.error(p.getName() + " does not have " + card.toString());
             throw new IllegalArgumentException("Player " + p.getName() + " does not have " + card.toString());
         }
@@ -303,12 +310,13 @@ public class Game {
         if (!(how.equals(WayToPlay.DRAW) || how.equals(WayToPlay.PICKUP))) {
             p.getHand().remove(card);
         }
-        if (nextPlayerIndex == players.size() - 1) {
-            nextPlayerIndex = 0;
+        int nextIndex;
+        if (playerIndices.get(p.getName()) == players.size() - 1) {
+            nextIndex = 0;
         } else {
-            nextPlayerIndex++;
+            nextIndex = playerIndices.get(p.getName()) + 1;
         }
-        nextPlayer = players.get(nextPlayerIndex).getName();
+        nextPlayer = players.get(nextIndex).getName();
         if (how.equals(WayToPlay.PASS)) {
             pass.getHand().add(card);
             if (LOG.getLevel().equals(Level.DEBUG)) {
@@ -348,8 +356,8 @@ public class Game {
     }
 
     /**
-     * deals the deck and assigns each player a hand; if cards are left over, assigns
-     * them to the draw pile
+     * Deals the deck and assigns each player a hand; if cards are left over, assigns them to the draw pile
+     *
      * @throws IllegalStateException if the game has not started yet
      */
     public void deal() {
@@ -367,6 +375,8 @@ public class Game {
     }
 
     /**
+     * Returns a new Deck as specified by the settings (poker, pinochle, or euchre)
+     *
      * @return the type of deck this game uses
      */
     @JsonIgnore
@@ -382,7 +392,8 @@ public class Game {
     }
 
     /**
-     * retrieves the hand of the player (so it can be updated in the param player object)
+     * Retrieves the hand of the player
+     *
      * @throws IllegalStateException if game has not started yet
      * @param name the name of the player whose hand is to be found
      * @return the hand of the player, or null if the player is not found
@@ -397,7 +408,8 @@ public class Game {
     }
 
     /**
-     * starts the game
+     * Starts the game
+     *
      * @throws IllegalStateException if settings are still null, i.e. have not been set yet
      * @throws IllegalStateException if the number of players in settings does not match the number
      * of players in the game
@@ -419,11 +431,12 @@ public class Game {
     }
 
     /**
-     * compares two cards
+     * Compares two cards to determine whichever is higher. Trump suit always wins; within suits,
+     * higher rank wins; if the cards are different suits and neither is trump, c1 wins
+     *
      * @param c1 the card that was played first of the two
      * @param c2 the card that was played second of the two
-     * @return the card that will win; trump suit always wins; within suits, higher rank wins;
-     * if the cards are different suits and neither is trump, the first one played (c1) wins
+     * @return the card that is greater of the two
      */
     private Card compare(Card c1, Card c2) {
         if (c1.getSuit().equals(trump) && !c2.getSuit().equals(trump)) {
@@ -442,7 +455,9 @@ public class Game {
     }
 
     /**
-     * awards the cards on a trick to the player with the highest card
+     * Awards the cards on a trick to the player with the highest card - the highest trump wins.
+     * If there is no trump on the trick, the card of the highest rank and of the suit that was
+     * played first wins.
      */
     private void collectTrick() {
         int index;
@@ -464,13 +479,14 @@ public class Game {
             LOG.debug(trickPlayers.get(index).getName() + " collected the trick: " + trick);
         }
         nextPlayer = trickPlayers.get(index).getName();
-        nextPlayerIndex = playerIndices.get(nextPlayer);
         trick = new ArrayList<>();
         trickPlayers = new ArrayList<>();
         count = 0;
     }
 
     /**
+     * Gets the player with the given name
+     *
      * @param name the name of the player to be found
      * @return the player with the given name
      */
@@ -481,7 +497,8 @@ public class Game {
     }
 
     /**
-     * sets settings and initializes all necessary fields depending on the settings
+     * Sets the settings
+     *
      * @throws IllegalStateException if game has started already
      * @param s the settings for the game - cannot be null
      */
@@ -493,18 +510,11 @@ public class Game {
             throw new IllegalStateException("Settings cannot be changed after game is started");
         }
         setSettings(s);
-        if (s.getTrickEnabled()) {
-            trick = new ArrayList<>();
-            trickPlayers = new ArrayList<>();
-            count = 0;
-        }
-        if (s.getDiscardEnabled()) {
-            discard = new ArrayList<>();
-        }
     }
 
     /**
-     * adds the given number of points to the player's score
+     * Adds the given number of points to the player's score
+     *
      * @throws IllegalStateException if game has not started yet
      * @param name the name of the player whose score is to be added to - cannot be null
      * @param points the number of points to be added (can be positive or negative)
@@ -521,7 +531,8 @@ public class Game {
     }
 
     /**
-     * adds a player to a team
+     * Adds a player to a team
+     *
      * @param name the name of the player to be added
      * @param team the team they are joining
      */

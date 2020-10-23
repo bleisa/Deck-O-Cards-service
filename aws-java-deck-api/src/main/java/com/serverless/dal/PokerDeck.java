@@ -3,6 +3,12 @@ package com.serverless.dal;
 import java.util.ArrayList;
 import java.util.Random;
 
+/**
+ * A PokerDeck is a deck with 52 cards from Ace to King, one of each in every suit.
+ * Ace can be high or low; otherwise, cards are ordered in increasing numerical order,
+ * ending with 10, J, Q, K (optional A).
+ */
+
 public class PokerDeck extends Deck {
 
     /**
@@ -29,6 +35,11 @@ public class PokerDeck extends Deck {
         }
     }
 
+    /**
+     * Returns the type of deck
+     *
+     * @return Poker
+     */
     public DeckType type() {
         return DeckType.POKER;
     }

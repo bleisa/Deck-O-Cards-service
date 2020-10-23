@@ -6,9 +6,9 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * A simple Card class.
+ * A Card represents an immutable playing card with a rank and a suit.
  */
-public class Card implements Serializable {
+public final class Card implements Serializable {
     private final int value;
     private final Suit suit;
 

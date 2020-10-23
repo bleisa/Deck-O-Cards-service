@@ -3,6 +3,12 @@ package com.serverless.dal;
 import java.util.ArrayList;
 import java.util.Random;
 
+/**
+ * A EuchreDeck is a Deck with 24 cards from 9 to Ace, one each in every suit.
+ * Cards are ordered from highest to lowest as follows: A, right J, left J, K, Q, 10, 9
+ * (left jack is the same color but not the same suit)
+ */
+
 public class EuchreDeck extends Deck {
     /**
      * Constructs a new Euchre deck (one each of 9-A)
@@ -28,6 +34,11 @@ public class EuchreDeck extends Deck {
         // TODO: left jack
     }
 
+    /**
+     * Returns the kind of deck this is
+     *
+     * @return the type of this deck (euchre)
+     */
     public DeckType type() {
         return DeckType.EUCHRE;
     }

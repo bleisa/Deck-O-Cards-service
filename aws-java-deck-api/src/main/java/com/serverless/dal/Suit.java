@@ -1,10 +1,15 @@
 package com.serverless.dal;
 
+/**
+ * A Suit is an enum representing the suit of a card (Hearts, Spades, Diamonds, or Clubs).
+ */
+
 public enum Suit {
     HEARTS, DIAMONDS, CLUBS, SPADES;
 
     /**
      * 0 -> hearts, 1 -> diamonds, 2 -> clubs, 3-> spades
+     *
      * @param j indicates which suit to find - must be in [0, 3]
      * @return the suit corresponding to j
      */
@@ -24,6 +29,8 @@ public enum Suit {
     }
 
     /**
+     * converts a Suit to an int representing it
+     *
      * @param suit the suit to be converted to an int
      * @return 0 if hearts, 1 if diamonds, 2 if clubs, 3 if spades
      */

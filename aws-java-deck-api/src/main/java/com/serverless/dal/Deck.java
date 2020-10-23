@@ -6,6 +6,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * A Deck is an abstract representation of a deck of playing cards.
+ */
+
 public abstract class Deck implements Serializable {
     protected static Random r;
     protected List<Card> deck;
@@ -22,6 +26,7 @@ public abstract class Deck implements Serializable {
 
     /**
      * shuffles a subset of the deck
+     *
      * @param subset the list of cards to be shuffled
      */
     public static void shuffle(List<Card> subset) {
@@ -36,7 +41,9 @@ public abstract class Deck implements Serializable {
     }
 
     /**
-     * shuffles and deals the deck, giving the ith player the number of cards at the ith index of cards
+     * Shuffles and deals the deck into cards.length hands. The ith hand has cards[i] cards in it.
+     * If there are cards left over, puts them in the last index of the returned list for a draw pile.
+     *
      * @throws IllegalArgumentException if attempting to deal more cards than are in the deck
      * @param cards the numbers of cards to be dealt to each player
      * @return a list of hands
@@ -69,6 +76,8 @@ public abstract class Deck implements Serializable {
     }
 
     /**
+     * Returns the size of the deck
+     *
      * @return the number of cards in the deck
      */
     public int size() {
@@ -76,13 +85,16 @@ public abstract class Deck implements Serializable {
     }
 
     /**
+     * Returns the type of the deck - to be implemented by children
+     *
      * @return the type of deck (as an enum)
      */
     abstract public DeckType type();
 
     /**
-     * compares two card values and returns the greater of the two based on the ordering of
+     * Compares two card values and returns the greater of the two based on the ordering of
      * the deck
+     *
      * @param v1 the value of one card
      * @param v2 the value of another card
      * @return whichever is greater in this deck, or -1 if neither is found
