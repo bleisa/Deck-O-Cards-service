@@ -518,13 +518,13 @@ public class Game {
      * Adds the given number of points to the player's score
      *
      * @throws IllegalStateException if game has not started yet
-     * @param name the name of the player whose score is to be added to - cannot be null
+     * @param name the name of the player whose score is to be added to - must be in this game
      * @param points the number of points to be added (can be positive or negative)
      */
     public void score(String name, int points) {
         Player p = getPlayer(name);
         if (p == null) {
-            throw new IllegalArgumentException("Player cannot be null");
+            throw new IllegalArgumentException("Player does not exist");
         }
         if (!started) {
             throw new IllegalStateException("Game has not started yet");
@@ -535,13 +535,13 @@ public class Game {
     /**
      * Adds a player to a team
      *
-     * @param name the name of the player to be added
+     * @param name the name of the player to be added - must be part of this game
      * @param team the team they are joining
      */
     public void joinTeam(String name, String team) {
         Player p = getPlayer(name);
         if (p == null) {
-            throw new IllegalArgumentException("Player cannot be null");
+            throw new IllegalArgumentException("Player does not exist");
         }
         if (started) {
             throw new IllegalStateException("Cannot join team after game has started");
