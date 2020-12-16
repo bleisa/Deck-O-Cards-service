@@ -14,6 +14,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import static org.junit.Assert.assertEquals;
+
 public class JSONExperimentation {
     private static final Random R = new Random();
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -27,8 +29,14 @@ public class JSONExperimentation {
         g.joinGame("me3");
         g.joinGame("me4");
         int[] cards = {12, 12, 12, 12};
-        Settings s = new Settings(cards, DeckType.PINOCHLE, false, false, true, false,
-                true, false, false, false, false, 4);
+        Settings s = new Settings.SettingsBuilder(cards, DeckType.PINOCHLE)
+                .skip(true)
+                .trick(true)
+                .aceHigh(true)
+                .points(true)
+                .teams(true)
+                .show(true)
+                .build();
         g.setUp(s);
         g.startGame();
         g.deal();
@@ -55,9 +63,14 @@ public class JSONExperimentation {
         }
         List<Player> players = g.getPlayers();
         int[] counts = {12, 12, 12, 12};
-        Settings s = new Settings(counts, DeckType.PINOCHLE, false, false, true,
-                false, false, false, false, false, false,
-                4);
+        Settings s = new Settings.SettingsBuilder(counts, DeckType.PINOCHLE)
+                .skip(true)
+                .trick(true)
+                .aceHigh(true)
+                .points(true)
+                .teams(true)
+                .show(true)
+                .build();
         g.setSettings(s);
         g.startGame();
         g.deal();
@@ -101,15 +114,21 @@ public class JSONExperimentation {
         totallyNotSettings.put("pointsEnabled", true);
         totallyNotSettings.put("drawEnabled", false);
         totallyNotSettings.put("cardsPerTrick", 4);
-        Settings actualSettings = new Settings(counts, DeckType.PINOCHLE, true, false, true,
-                false, true, false, true, false, true, 4);
+        Settings actualSettings = new Settings.SettingsBuilder(counts, DeckType.PINOCHLE)
+                .skip(true)
+                .trick(true)
+                .aceHigh(true)
+                .points(true)
+                .teams(true)
+                .show(true)
+                .build();
         ObjectWriter ow = mapper.writer();
         String jsonNotSettings = ow.writeValueAsString(totallyNotSettings);
         String jsonSettings = ow.writeValueAsString(actualSettings);
         System.out.println(jsonSettings);
         System.out.println(jsonNotSettings);
         Settings notSettings = mapper.readValue(jsonNotSettings, Settings.class);
-        assert notSettings.equals(actualSettings);
+        assertEquals(notSettings, actualSettings);
     }
 
     @Test

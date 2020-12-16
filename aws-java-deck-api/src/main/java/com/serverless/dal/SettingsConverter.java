@@ -9,8 +9,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A SettingsConverter converts Settings for entry in an AWS DynamoDB table
+ */
 public class SettingsConverter implements DynamoDBTypeConverter<String, Settings> {
-    ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public String convert(Settings settings) {

@@ -1,31 +1,42 @@
 package com.serverless.dal;
 
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
 /**
- * A Deck is an abstract representation of a deck of playing cards.
+ * A Deck is an abstract representation of a deck of playing cards. This class is designed
+ * to be subclassed.
  */
 
-public abstract class Deck implements Serializable {
+public abstract class Deck {
+    private static final boolean checkRep = false;
     protected static Random r;
     protected List<Card> deck;
     protected List<Integer> ordering;
     // speed up potential: replace with Map<Integer, Integer>: essentially map from value of card
     // to its order. Then comparing cards will be faster
 
+    // Abstraction Function: this.deck is the list of cards in the deck.
+    //                       this.ordering is the order in which cards are considered
+    //                              to be greater than each other; if the value of card A
+    //                              is after the value of card B in this.ordering, then
+    //                              A > B
+
+    // Representation Invariant: this.deck != null
+    //                           this.ordering != null
+
     /**
      * shuffles the deck
      */
     public void shuffle() { // modern Fisher-Yates shuffle from Wikipedia
+        checkRep();
         shuffle(deck);
+        checkRep();
     }
 
     /**
-     * shuffles a subset of the deck
+     * shuffles a subset of a deck
      *
      * @param subset the list of cards to be shuffled
      */
@@ -49,6 +60,7 @@ public abstract class Deck implements Serializable {
      * @return a list of hands
      */
     public List<List<Card>> deal(int[] cards) {
+        checkRep();
         int total = 0;
         for (int i: cards) {
             total += i;
@@ -72,6 +84,7 @@ public abstract class Deck implements Serializable {
             remaining.add(deck.get(i));
         }
         deal.add(remaining);
+        checkRep();
         return deal;
     }
 
@@ -81,6 +94,7 @@ public abstract class Deck implements Serializable {
      * @return the number of cards in the deck
      */
     public int size() {
+        checkRep();
         return deck.size();
     }
 
@@ -100,6 +114,7 @@ public abstract class Deck implements Serializable {
      * @return whichever is greater in this deck, or -1 if neither is found
      */
     public int compareCardValue(int v1, int v2) {
+        checkRep();
         for (int i : ordering) {
             if (i == v1) {
                 return v1;
@@ -107,6 +122,14 @@ public abstract class Deck implements Serializable {
                 return v2;
             }
         }
+        checkRep();
         return -1;
+    }
+
+    private void checkRep() {
+        if (checkRep) {
+            assert this.deck != null;
+            assert this.ordering != null;
+        }
     }
 }

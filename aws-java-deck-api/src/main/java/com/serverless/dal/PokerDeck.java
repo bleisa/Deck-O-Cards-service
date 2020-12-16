@@ -33,6 +33,7 @@ public class PokerDeck extends Deck {
                 super.ordering.add(i);
             }
         }
+        checkRep();
     }
 
     /**
@@ -42,5 +43,10 @@ public class PokerDeck extends Deck {
      */
     public DeckType type() {
         return DeckType.POKER;
+    }
+
+    private void checkRep() {
+        assert super.deck != null;
+        assert super.ordering != null;
     }
 }

@@ -34,6 +34,7 @@ public class PinochleDeck extends Deck {
             super.ordering.add(i);
         }
         super.ordering.add(9);
+        checkRep();
     }
 
     /**
@@ -43,5 +44,10 @@ public class PinochleDeck extends Deck {
      */
     public DeckType type() {
         return DeckType.PINOCHLE;
+    }
+
+    private void checkRep() {
+        assert super.deck != null;
+        assert super.ordering != null;
     }
 }

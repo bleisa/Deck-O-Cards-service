@@ -15,6 +15,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+
 /**
  * The primary testing class for the Game class with api endpoints
  */
@@ -130,10 +133,10 @@ public class GameTest {
                             break;
                         }
                     }
-                    assert teammate != null;
+                    assertNotEquals(teammate, null);
                     int status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/PASS/" +
                             teammate + "/" + name, "PUT");
-                    assert status == 200;
+                    assertEquals(status, 200);
                     for (int i = 0; i < players.size(); i++) {
                         String pl = players.get(i);
                         if (pl.equals(name)) {
@@ -153,7 +156,8 @@ public class GameTest {
                             teammateData = child;
                         }
                     }
-                    assert playerData != null && teammateData != null;
+                    assertNotEquals(playerData, null);
+                    assertNotEquals(teammateData, null);
                     hands.put(name, jsonToCardList(playerData.get("hand")));
                     hands.put(teammate, jsonToCardList(teammateData.get("hand")));
                     System.out.println(name + "'s hand is now " + hands.get(name));
@@ -161,7 +165,7 @@ public class GameTest {
                 } else if (g.get("nextPlayer").asText().equals(name)) {
                     int status = callHandler("/turn/" + code + "/" + null + "/SKIP/" +
                             null + "/" + name, "PUT");
-                    assert status == 200;
+                    assertEquals(status, 200);
                     System.out.println(name + " skipped their turn...");
                 }
             }
@@ -178,7 +182,7 @@ public class GameTest {
                 Card c = hands.get(name).get(R.nextInt(hands.get(name).size()));
                 String card = mapper.writer().writeValueAsString(c);
                 int status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/SHOW/null/" + name, "PUT");
-                assert status == 200;
+                assertEquals(status, 200);
             }
             jsonGame = callHandlerResponse("/" + code, "GET");
             g = mapper.readTree(jsonGame);
@@ -193,17 +197,17 @@ public class GameTest {
             JsonNode g = mapper.readTree(jsonGame);
             if (g.get("nextPlayer").asText().equals(name)) {
                 JsonNode cardNode = null;
-                for (JsonNode child: g.get("players")) {
+                for (JsonNode child : g.get("players")) {
                     if (child.get("name").asText().equals(name)) {
                         cardNode = child.get("shown").get(0);
                         break;
                     }
                 }
-                assert cardNode != null;
+                assertNotEquals(cardNode, null);
                 Card c = new Card(Suit.valueOf(cardNode.get("suit").asText()), cardNode.get("value").asInt());
                 String card = mapper.writer().writeValueAsString(c);
                 int status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/PICKUP/null/" + name, "PUT");
-                assert status == 200;
+                assertEquals(status, 200);
             }
         }
     }
@@ -211,7 +215,7 @@ public class GameTest {
     private void playTrumpHand(List<String> players, Map<String, List<Card>> hands, String code, String trump) throws IOException {
         System.out.println(trump + " is trump");
         int status = callHandler("/trump/" + code + "/" + trump, "PUT");
-        assert status == 200;
+        assertEquals(status, 200);
         int trickCount = 0;
         String jsonGame = callHandlerResponse("/" + code, "GET");
         ObjectMapper mapper = new ObjectMapper();
@@ -229,7 +233,7 @@ public class GameTest {
             Card c = hands.get(currentPlayer).get(R.nextInt(hands.get(currentPlayer).size()));
             String card = mapper.writer().writeValueAsString(c);
             status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/TRICK/null/" + currentPlayer, "PUT");
-            assert status == 200;
+            assertEquals(status, 200);
             System.out.println(currentPlayer + " played " + c.toString() + " in a trick....");
             jsonGame = callHandlerResponse("/" + code, "GET");
             g = mapper.readTree(jsonGame);
@@ -239,7 +243,7 @@ public class GameTest {
                     playerData = child;
                 }
             }
-            assert playerData != null;
+            assertNotEquals(playerData, null);
             hands.put(currentPlayer, jsonToCardList(playerData.get("hand")));
             collected.put(currentPlayer, jsonToCardList(playerData.get("collected")));
             System.out.println("\t" + currentPlayer + "'s hand is now " + hands.get(currentPlayer));
@@ -252,7 +256,7 @@ public class GameTest {
         for (String name: players) {
             int points = R.nextInt(100);
             int status = callHandler("/score/" + code + "/" + name + "/" + points, "PUT");
-            assert status == 200;
+            assertEquals(status, 200);
             String jsonGame = callHandlerResponse("/" + code, "GET");
             JsonNode g = new ObjectMapper().readTree(jsonGame);
             for (JsonNode child: g.get("players")) {
@@ -280,7 +284,7 @@ public class GameTest {
         }
         BufferedReader in = new BufferedReader(reader);
         String inputLine;
-        StringBuffer content = new StringBuffer();
+        StringBuilder content = new StringBuilder();
         while ((inputLine = in.readLine()) != null) {
             content.append(inputLine);
         }
@@ -325,7 +329,7 @@ public class GameTest {
     private String createGame(String gameType) throws IOException {
         System.out.println("Starting " + gameType + " game....");
         String code = callHandlerResponse("/", "POST");
-        assert code.length() == 5;
+        assertEquals(code.length(), 5);
         System.out.println("Game code is " + code);
         return code;
     }
@@ -333,32 +337,32 @@ public class GameTest {
     private void endGame(String code) throws IOException {
         System.out.println("Ending game....");
         int status = callHandler("/" + code, "DELETE");
-        assert status == 200;
+        assertEquals(status, 200);
         System.out.println("Test successful");
     }
 
     private void startGame(String code, String settings, String gameType, Map<String, String> teams) throws IOException {
         int status = callHandler("/settings/" + code + "/" + settings, "PUT");
-        assert status == 200;
+        assertEquals(status, 200);
         System.out.println("Settings have been set for " + gameType + "....");
         if (teams != null) {
             for (String player: teams.keySet()) {
                 status = joinTeam(code, player, teams.get(player));
-                assert status == 200;
+                assertEquals(status, 200);
             }
         }
         status = callHandler("/start/" + code, "PUT");
-        assert status == 200;
+        assertEquals(status, 200);
         System.out.println("Game has been started....");
         status = callHandler("/deal/" + code, "PUT");
-        assert status == 200;
+        assertEquals(status, 200);
         System.out.println("Hands have been dealt....");
     }
 
     private void joinPlayers(String code, List<String> players) throws IOException {
         for (String name: players) {
             int status = callHandler("/join/" + code + "/" + name, "PUT");
-            assert status == 200;
+            assertEquals(status, 200);
         }
         System.out.println("Players have joined....");
     }
@@ -395,15 +399,15 @@ public class GameTest {
         Map<String, Object> settings = new HashMap<>();
         settings.put("cardsPer", counts);
         settings.put("deckType", DeckType.PINOCHLE);
-        settings.put("skipEnabled", skip);
-        settings.put("discardEnabled", false);
-        settings.put("trickEnabled", true);
-        settings.put("passEnabled", pass);
-        settings.put("showEnabled", true);
+        settings.put("skip", skip);
+        settings.put("discard", false);
+        settings.put("trick", true);
+        settings.put("pass", pass);
+        settings.put("show", true);
         settings.put("aceHigh", false);
-        settings.put("teamsEnabled", true);
-        settings.put("pointsEnabled", false);
-        settings.put("drawEnabled", true);
+        settings.put("teams", true);
+        settings.put("points", false);
+        settings.put("draw", true);
         settings.put("cardsPerTrick", 4);
         String json = new ObjectMapper().writeValueAsString(settings);
         return URLEncoder.encode(json, StandardCharsets.UTF_8);
@@ -414,15 +418,15 @@ public class GameTest {
         Map<String, Object> settings = new HashMap<>();
         settings.put("cardsPer", counts);
         settings.put("deckType", DeckType.POKER);
-        settings.put("skipEnabled", false);
-        settings.put("discardEnabled", false);
-        settings.put("trickEnabled", true);
-        settings.put("passEnabled", false);
-        settings.put("showEnabled", false);
+        settings.put("skip", false);
+        settings.put("discard", false);
+        settings.put("trick", true);
+        settings.put("pass", false);
+        settings.put("show", false);
         settings.put("aceHigh", true);
-        settings.put("teamsEnabled", false);
-        settings.put("pointsEnabled", false);
-        settings.put("drawEnabled", true);
+        settings.put("teams", false);
+        settings.put("points", false);
+        settings.put("draw", true);
         settings.put("cardsPerTrick", 4);
         String json = new ObjectMapper().writeValueAsString(settings);
         return URLEncoder.encode(json, StandardCharsets.UTF_8);
@@ -433,15 +437,15 @@ public class GameTest {
         int[] counts = {7, 7, 7};
         settings.put("cardsPer", counts);
         settings.put("deckType", DeckType.POKER);
-        settings.put("skipEnabled", false);
-        settings.put("discardEnabled", true);
-        settings.put("trickEnabled", false);
-        settings.put("passEnabled", false);
-        settings.put("showEnabled", true);
+        settings.put("skip", false);
+        settings.put("discard", true);
+        settings.put("trick", false);
+        settings.put("pass", false);
+        settings.put("show", true);
         settings.put("aceHigh", false);
-        settings.put("teamsEnabled", false);
-        settings.put("pointsEnabled", true);
-        settings.put("drawEnabled", true);
+        settings.put("teams", false);
+        settings.put("points", true);
+        settings.put("draw", true);
         settings.put("cardsPerTrick", 0);
         String json = new ObjectMapper().writeValueAsString(settings);
         return URLEncoder.encode(json, StandardCharsets.UTF_8);

@@ -32,6 +32,7 @@ public class EuchreDeck extends Deck {
         super.ordering.add(10);
         super.ordering.add(9);
         // TODO: left jack
+        checkRep();
     }
 
     /**
@@ -41,5 +42,10 @@ public class EuchreDeck extends Deck {
      */
     public DeckType type() {
         return DeckType.EUCHRE;
+    }
+
+    private void checkRep() {
+        assert super.deck != null;
+        assert super.ordering != null;
     }
 }

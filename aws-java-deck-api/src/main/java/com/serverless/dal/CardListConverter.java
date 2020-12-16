@@ -9,8 +9,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A CardListConverter converts Lists of Cards for a AWS DynamoDB table
+ */
 public class CardListConverter implements DynamoDBTypeConverter<String, List<Card>> {
-    private final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
     @Override
     public List<Card> unconvert(String string) {
         CardConverter cc = new CardConverter();

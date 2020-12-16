@@ -2,20 +2,25 @@ package com.serverless.dal;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * A Card represents an immutable playing card with a rank and a suit.
  */
-public final class Card implements Serializable {
+public final class Card {
+    private static final boolean checkRep = false;
     private final int value;
     private final Suit suit;
+
+    // Abstraction Function: this.value is the rank of the card
+    //                       this.suit is the suit of the card
+
+    // Representation Invariant: 1 <= this.value <= 13, this.suit != null
 
     /**
      * constructs a new card
      * @param suit the suit of the card - cannot be null
-     * @param value the numerical value of the card - must be between 0 and 13, inclusive
+     * @param value the numerical value of the card - must be between 1 and 13, inclusive
      */
     public Card(@JsonProperty("suit")Suit suit, @JsonProperty("value") int value) {
         if (value <= 0 || value > 13) {
@@ -26,6 +31,7 @@ public final class Card implements Serializable {
         }
         this.value = value;
         this.suit = suit;
+        checkRep();
     }
 
     /**
@@ -43,7 +49,7 @@ public final class Card implements Serializable {
     }
 
     /**
-     * @return the card as a string of the form "value of suit"
+     * @return the card as a string of the form "rank of suit"
      */
     @Override
     public String toString() {
@@ -62,5 +68,13 @@ public final class Card implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(value, suit);
+    }
+
+    // checks the representation invariant of the object
+    private void checkRep() {
+        if (checkRep) {
+            assert 0 < this.value && this.value <= 13;
+            assert this.suit != null;
+        }
     }
 }

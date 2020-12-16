@@ -113,6 +113,12 @@ functions:
       - http:
           path: /deckocards/team/{code}/{name}/{team}
           method: put
+  getPlayers:
+    handler: com.serverless.GetPlayersHandler
+    events:
+      - http:
+          path: /deckocards/{code}/players
+          method: get
 
 resources:
   Resources:

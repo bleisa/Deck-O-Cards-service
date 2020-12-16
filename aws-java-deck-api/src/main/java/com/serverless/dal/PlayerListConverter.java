@@ -9,8 +9,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PlayerConverter implements DynamoDBTypeConverter<List<String>, List<Player>> {
-    private final ObjectMapper mapper = new ObjectMapper();
+/**
+ * A PlayerListConverter converts lists of players for entry in an AWS DynamoDB table
+ */
+public class PlayerListConverter implements DynamoDBTypeConverter<List<String>, List<Player>> {
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public List<String> convert(List<Player> playerList) {

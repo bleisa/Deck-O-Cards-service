@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
+/**
+ * A CardConverter converts cards for entry in an AWS DynamoDB table
+ */
 public class CardConverter implements DynamoDBTypeConverter<String, Card> {
     private static final ObjectMapper mapper = new ObjectMapper();
 

@@ -33,8 +33,14 @@ public class GameDirectTest {
         Player me3 = g.getPlayer("me3");
         Player me4 = g.getPlayer("me4");
         int[] counts = {16, 8, 16, 8};
-        Settings settings = new Settings(counts, DeckType.PINOCHLE, true, false, true, true,
-                true, false, true, false, true,4);
+        Settings settings = new Settings.SettingsBuilder(counts, DeckType.PINOCHLE)
+                .trick(true)
+                .aceHigh(true)
+                .pass(true)
+                .points(true)
+                .teams(true)
+                .show(true)
+                .build();
         g.setUp(settings);
         g.joinTeam(me1.getName(), "We");
         g.joinTeam(me2.getName(), "We");
@@ -55,8 +61,13 @@ public class GameDirectTest {
         Player me3 = g.getPlayer("me3");
         Player me4 = g.getPlayer("me4");
         int[] counts = {12, 12, 12, 12};
-        Settings settings = new Settings(counts, DeckType.PINOCHLE, false, false, true, false,
-                true, false, true, false, true,4);
+        Settings settings = new Settings.SettingsBuilder(counts, DeckType.PINOCHLE)
+                .trick(true)
+                .aceHigh(true)
+                .points(true)
+                .teams(true)
+                .show(true)
+                .build();
         g.setUp(settings);
         g.joinTeam(me1.getName(), "We");
         g.joinTeam(me2.getName(), "We");
@@ -69,8 +80,13 @@ public class GameDirectTest {
     public void setSettingsDirectTest() {
         Game g = new Game().getGame(PINOCHLE_CODE);
         int[] counts = {12, 12, 12, 12};
-        Settings settings = new Settings(counts, DeckType.PINOCHLE, false, false, true, false,
-                true, false, true, false, true,4);
+        Settings settings = new Settings.SettingsBuilder(counts, DeckType.PINOCHLE)
+                .trick(true)
+                .aceHigh(true)
+                .points(true)
+                .teams(true)
+                .show(true)
+                .build();
         g.setSettings(settings);
         g.save(g);
     }

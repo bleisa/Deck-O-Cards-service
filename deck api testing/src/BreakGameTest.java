@@ -162,8 +162,15 @@ public class BreakGameTest {
 
     private String pinochleSettingsStringForURL(int[] counts, boolean pass, boolean skip) {
         SettingsConverter sc = new SettingsConverter();
-        Settings settings = new Settings(counts, DeckType.PINOCHLE, skip, false, true,
-                pass, true, false, true, false, true, 4);
+        Settings settings = new Settings.SettingsBuilder(counts, DeckType.PINOCHLE)
+                .skip(skip)
+                .pass(pass)
+                .trick(true)
+                .aceHigh(true)
+                .points(true)
+                .teams(true)
+                .show(true)
+                .build();
         return URLEncoder.encode(sc.convert(settings), StandardCharsets.UTF_8);
     }
 }

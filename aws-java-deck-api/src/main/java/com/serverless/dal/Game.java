@@ -85,7 +85,7 @@ public class Game {
     public Suit getTrump() { return this.trump; }
     public void setTrump(Suit s) { this.trump = s; }
 
-    @DynamoDBTypeConverted(converter = PlayerConverter.class)
+    @DynamoDBTypeConverted(converter = PlayerListConverter.class)
     @DynamoDBAttribute(attributeName = "players")
     public List<Player> getPlayers() { return this.players; }
     public void setPlayers(List<Player> players) {
@@ -114,7 +114,7 @@ public class Game {
     public List<Card> getTrick() { return this.trick; }
     public void setTrick(List<Card> trick) { this.trick = trick; }
 
-    @DynamoDBTypeConverted(converter = PlayerConverter.class)
+    @DynamoDBTypeConverted(converter = PlayerListConverter.class)
     @DynamoDBAttribute(attributeName = "trick order")
     public List<Player> getTrickPlayers() { return this.trickPlayers; }
     public void setTrickPlayers(List<Player> trickPlayers) { this.trickPlayers = trickPlayers; }
@@ -287,12 +287,12 @@ public class Game {
             LOG.error("attempted to take turn before game started");
             throw new IllegalStateException("Game has not started yet");
         }
-        if ((!settings.getSkipEnabled() && how.equals(WayToPlay.SKIP)) ||
-                (!settings.getDiscardEnabled() && how.equals(WayToPlay.DISCARD)) ||
-                (!settings.getPassEnabled() && how.equals(WayToPlay.PASS)) ||
-                (!settings.getShowEnabled() && how.equals(WayToPlay.SHOW)) ||
-                (!settings.getTrickEnabled() && how.equals(WayToPlay.TRICK)) ||
-                (!settings.isDrawEnabled() && how.equals(WayToPlay.DRAW))) {
+        if ((!settings.getSkip() && how.equals(WayToPlay.SKIP)) ||
+                (!settings.getDiscard() && how.equals(WayToPlay.DISCARD)) ||
+                (!settings.getPass() && how.equals(WayToPlay.PASS)) ||
+                (!settings.getShow() && how.equals(WayToPlay.SHOW)) ||
+                (!settings.getTrick() && how.equals(WayToPlay.TRICK)) ||
+                (!settings.isDraw() && how.equals(WayToPlay.DRAW))) {
             LOG.error(how.toString() + " is not enabled");
             throw new IllegalArgumentException(how.toString() + " is not enabled");
         }
@@ -348,7 +348,7 @@ public class Game {
             p.getShown().remove(card);
             p.getHand().add(card);
         }
-        if (settings.isDrawEnabled() && draw.size() == 0 && discard.size() > 0) {
+        if (settings.isDraw() && draw.size() == 0 && discard.size() > 0) {
             Deck.shuffle(discard);
             draw = discard;
             discard = new ArrayList<>();
@@ -545,5 +545,16 @@ public class Game {
             throw new IllegalStateException("Cannot join team after game has started");
         }
         p.setTeamName(team);
+    }
+
+    /**
+     * Gets the names of the players in this game
+     *
+     * @return a list of the players' names
+     */
+    @JsonIgnore
+    @DynamoDBIgnore
+    public List<String> getPlayerNames() {
+        return new ArrayList<>(this.playerNames.keySet());
     }
 }
