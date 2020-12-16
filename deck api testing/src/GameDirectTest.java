@@ -1,29 +1,35 @@
 import com.serverless.dal.*;
+
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
+
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * Tests the Game class without api endpoints for easier debugging
  */
 
 public class GameDirectTest {
-    private static final String PINOCHLE_CODE = "HTLXC"; // for a standard pinochle game with four players
+    private static String pinochleCode; // for a standard pinochle game with four players
     private static final Random R = new Random();
-    private static final String PASS_CODE = "HUAMG"; // for a pass pinochle game with four players
+    private static String passCode; // for a pass pinochle game with four players
 
-    @Ignore
-    @Test
-    public void createGameDirectTest() {
+    @BeforeClass
+    public static void createGameDirectTest() {
         Game g = new Game();
         g.save(g);
-        System.out.println(g.getCode());
+        pinochleCode = g.getCode();
+        g = new Game();
+        g.save(g);
+        passCode = g.getCode();
     }
 
     @Test
     public void joinPassGameDirectTest() {
-        Game g = new Game().getGame(PASS_CODE);
+        Game g = new Game().getGame(passCode);
         List<String> names = List.of("me1", "me2", "me3", "me4");
         for (String name: names) {
             g.joinGame(name);
@@ -51,7 +57,7 @@ public class GameDirectTest {
 
     @Test
     public void joinGameDirectTest() {
-        Game g = new Game().getGame(PINOCHLE_CODE);
+        Game g = new Game().getGame(pinochleCode);
         List<String> names = List.of("me1", "me2", "me3", "me4");
         for (String name: names) {
             g.joinGame(name);
@@ -78,7 +84,7 @@ public class GameDirectTest {
 
     @Test
     public void setSettingsDirectTest() {
-        Game g = new Game().getGame(PINOCHLE_CODE);
+        Game g = new Game().getGame(pinochleCode);
         int[] counts = {12, 12, 12, 12};
         Settings settings = new Settings.SettingsBuilder(counts, DeckType.PINOCHLE)
                 .trick(true)
@@ -93,28 +99,28 @@ public class GameDirectTest {
 
     @Test
     public void startPinochleGameDirectTest() {
-        Game g = new Game().getGame(PINOCHLE_CODE);
+        Game g = new Game().getGame(pinochleCode);
         g.startGame();
         g.save(g);
     }
 
     @Test
     public void startPassGameDirectTest() {
-        Game g = new Game().getGame(PASS_CODE);
+        Game g = new Game().getGame(passCode);
         g.startGame();
         g.save(g);
     }
 
     @Test
     public void dealHandDirectTest() {
-        Game g = new Game().getGame(PINOCHLE_CODE);
+        Game g = new Game().getGame(pinochleCode);
         g.deal();
         g.save(g);
     }
 
     @Test
     public void getHandDirectTest() {
-        Game g = new Game().getGame(PINOCHLE_CODE);
+        Game g = new Game().getGame(pinochleCode);
         List<Card> hand = g.getHand("me1");
         System.out.println(hand);
     }
@@ -122,14 +128,14 @@ public class GameDirectTest {
     @Ignore
     @Test
     public void takeTurnDirectTest() {
-        Game g = new Game().getGame(PINOCHLE_CODE);
+        Game g = new Game().getGame(pinochleCode);
         g.takeTurn("me1", new Card(Suit.SPADES, 9), WayToPlay.TRICK, null);
         g.save(g);
     }
 
     @Test
     public void roundDirectTest() {
-        Game g = new Game().getGame(PINOCHLE_CODE);
+        Game g = new Game().getGame(pinochleCode);
         g.deal();
         g.save(g);
         Player me = new Player("me1");
@@ -145,7 +151,7 @@ public class GameDirectTest {
 
     @Test
     public void passDirectTest() {
-        Game g = new Game().getGame(PASS_CODE);
+        Game g = new Game().getGame(passCode);
         g.deal();
         g.save(g);
         Player billy = new Player("me1");
@@ -182,6 +188,7 @@ public class GameDirectTest {
                             break;
                         }
                     }
+                    assertNotEquals(teammate, null);
                     assert teammate != null;
                     g.takeTurn(p.getName(), c, WayToPlay.PASS, teammate.getName());
                     for (int i = 0; i < players.size(); i++) {
@@ -206,7 +213,7 @@ public class GameDirectTest {
 
     @Test
     public void handDirectTest() {
-        Game g = new Game().getGame(PINOCHLE_CODE);
+        Game g = new Game().getGame(pinochleCode);
         g.deal();
         g.save(g);
         Player me1 = new Player("me1");

@@ -1,5 +1,5 @@
 import com.serverless.dal.*;
-import org.junit.Ignore;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -11,89 +11,89 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Let's break this
  */
 
 public class BreakGameTest {
-    private static final String CODE = "MALQI"; // current game object being used for testing
+    private static String code; // current game object being used for testing
 
-    @Ignore
-    @Test
+    @Before
     public void newHTTPTest() throws IOException {
-        int status = callHandler("", "POST", true);
-        assert status == 200;
+        code = callHandlerResponse("", "POST");
     }
 
     // -- same player names
     @Test
     public void joinTwoOfSameHTTPTest() throws IOException {
-        int status = callHandler("/join/" + CODE + "/Emma", "PUT");
-        assert status == 200;
-        status = callHandler("/join/" + CODE + "/Emma", "PUT");
-        assert status == 500;
+        int status = callHandler("/join/" + code + "/Emma", "PUT");
+        assertEquals(status, 200);
+        status = callHandler("/join/" + code + "/Emma", "PUT");
+        assertEquals(status, 500);
     }
 
     // -- ask for bad code
     @Test
     public void getNonexistentGameTest() throws IOException {
         int status = callHandler("/xxxxxxx", "GET");
-        assert status == 404;
+        assertEquals(status, 404);
     }
 
     @Test
     public void outOfOrderTest() throws IOException {
         String code = callHandlerResponse("", "POST");
-        assert code.length() == 5;
+        assertEquals(code.length(), 5);
         // -- start before settings
         int status = callHandler("/start/" + code, "PUT");
-        assert status == 500;
+        assertEquals(status, 500);
         // -- take turn before started
         CardConverter cc = new CardConverter();
         String card = cc.convert(new Card(Suit.HEARTS, 9));
         status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/TRICK/null/Henry", "PUT", true);
-        assert status == 500;
+        assertEquals(status, 500);
         // -- deal before started
         status = callHandler("/deal/" + code, "PUT");
-        assert status == 500;
+        assertEquals(status, 500);
         List<String> names = List.of("Billy", "Bob", "Joe", "Me");
         for (String name: names) {
             status = callHandler("/join/" + code + "/" + name, "PUT");
-            assert status == 200;
+            assertEquals(status, 200);
         }
         // -- start before settings again
         status = callHandler("/start/" + code, "PUT");
-        assert status == 500;
+        assertEquals(status, 500);
         String settings = pinochleSettingsStringForURL();
         status = callHandler("/settings/" + code + "/" + settings, "PUT");
-        assert status == 200;
+        assertEquals(status, 200);
         status = callHandler("/start/" + code, "PUT");
-        assert status == 200;
+        assertEquals(status, 200);
         // -- settings after started
         status = callHandler("/settings/" + code + "/" + settings, "PUT");
-        assert status == 500;
+        assertEquals(status, 500);
         // -- join game after started
         status = callHandler("/join/" + code + "/Rando", "PUT");
-        assert status == 500;
+        assertEquals(status, 500);
         status = callHandler("/deal/" + code, "PUT");
-        assert status == 200;
+        assertEquals(status, 200);
         // -- ask for a non-existent player
         card = cc.convert(new Card(Suit.HEARTS, 9));
         status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/TRICK/null/Rando", "PUT", true);
-        assert status == 500;
+        assertEquals(status, 500);
         // -- play card player does not have
         card = cc.convert(new Card(Suit.HEARTS, 6));
         status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/TRICK/null/Henry", "PUT", true);
-        assert status == 500;
+        assertEquals(status, 500);
         // -- mismatch settings
         card = cc.convert(new Card(Suit.HEARTS, 9));
         status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/DISCARD/null/Henry", "PUT", true);
-        assert status == 500;
+        assertEquals(status, 500);
         // -- get a game that does not exist
         status = callHandler("/xxxxxxx", "GET");
-        assert status == 404;
+        assertEquals(status, 404);
         status = callHandler("/" + code, "DELETE");
-        assert status == 200;
+        assertEquals(status, 200);
     }
 
     private String callHandlerResponse(String tail, String requestMethod) throws IOException {

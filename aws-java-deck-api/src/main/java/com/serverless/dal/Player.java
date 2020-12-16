@@ -10,7 +10,7 @@ import java.util.*;
  */
 
 public class Player {
-    private static final boolean checkRep = false;
+    private static final boolean CHECK_REP = false;
     private List<Card> hand;
     private final String name;
     private List<Card> collected;
@@ -189,7 +189,7 @@ public class Player {
     }
 
     private void checkRep() {
-        if (checkRep) {
+        if (CHECK_REP) {
             assert this.name != null;
             assert this.hand != null;
             assert this.collected != null;

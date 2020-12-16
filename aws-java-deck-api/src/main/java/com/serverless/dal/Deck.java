@@ -10,7 +10,7 @@ import java.util.Random;
  */
 
 public abstract class Deck {
-    private static final boolean checkRep = false;
+    private static final boolean CHECK_REP = false;
     protected static Random r;
     protected List<Card> deck;
     protected List<Integer> ordering;
@@ -127,7 +127,7 @@ public abstract class Deck {
     }
 
     private void checkRep() {
-        if (checkRep) {
+        if (CHECK_REP) {
             assert this.deck != null;
             assert this.ordering != null;
         }

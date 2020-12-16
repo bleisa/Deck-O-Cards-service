@@ -8,7 +8,7 @@ import java.util.Objects;
  * A Card represents an immutable playing card with a rank and a suit.
  */
 public final class Card {
-    private static final boolean checkRep = false;
+    private static final boolean CHECK_REP = false;
     private final int value;
     private final Suit suit;
 
@@ -72,7 +72,7 @@ public final class Card {
 
     // checks the representation invariant of the object
     private void checkRep() {
-        if (checkRep) {
+        if (CHECK_REP) {
             assert 0 < this.value && this.value <= 13;
             assert this.suit != null;
         }

@@ -68,6 +68,7 @@ public class Game {
         r = new Random();
         players = new ArrayList<>();
         playerNames = new HashMap<>();
+        playerIndices = new HashMap<>();
         started = false;
         trick = new ArrayList<>();
         trickPlayers = new ArrayList<>();
@@ -259,6 +260,7 @@ public class Game {
         Player p = new Player(name);
         players.add(p);
         playerNames.put(name, p);
+        playerIndices.put(name, players.size() - 1);
         if (players.size() == 1) {
             nextPlayer = name;
         }

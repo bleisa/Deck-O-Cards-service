@@ -3,6 +3,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.serverless.dal.*;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -15,10 +16,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class JSONExperimentation {
     private static final Random R = new Random();
     private static final ObjectMapper mapper = new ObjectMapper();
+    private static String code;
+    @Before
+    public void setup() throws IOException {
+        code = callHandlerResponse("", "POST");
+    }
+
     @Test
     public void lessLearnJSON() throws IOException {
         // Instantiate object, put some values in
@@ -104,20 +112,19 @@ public class JSONExperimentation {
         int[] counts = {12, 12, 12, 12};
         totallyNotSettings.put("cardsPer", counts);
         totallyNotSettings.put("deckType", DeckType.PINOCHLE);
-        totallyNotSettings.put("skipEnabled", true);
-        totallyNotSettings.put("discardEnabled", false);
-        totallyNotSettings.put("trickEnabled", true);
-        totallyNotSettings.put("passEnabled", false);
-        totallyNotSettings.put("showEnabled", true);
+        totallyNotSettings.put("skip", true);
+        totallyNotSettings.put("discard", false);
+        totallyNotSettings.put("trick", true);
+        totallyNotSettings.put("pass", false);
+        totallyNotSettings.put("show", true);
         totallyNotSettings.put("aceHigh", false);
-        totallyNotSettings.put("teamsEnabled", true);
-        totallyNotSettings.put("pointsEnabled", true);
-        totallyNotSettings.put("drawEnabled", false);
+        totallyNotSettings.put("teams", true);
+        totallyNotSettings.put("points", true);
+        totallyNotSettings.put("draw", false);
         totallyNotSettings.put("cardsPerTrick", 4);
         Settings actualSettings = new Settings.SettingsBuilder(counts, DeckType.PINOCHLE)
                 .skip(true)
                 .trick(true)
-                .aceHigh(true)
                 .points(true)
                 .teams(true)
                 .show(true)
@@ -128,7 +135,7 @@ public class JSONExperimentation {
         System.out.println(jsonSettings);
         System.out.println(jsonNotSettings);
         Settings notSettings = mapper.readValue(jsonNotSettings, Settings.class);
-        assertEquals(notSettings, actualSettings);
+        assertTrue(notSettings.equals(actualSettings));
     }
 
     @Test
@@ -137,21 +144,21 @@ public class JSONExperimentation {
         int[] counts = {12, 12, 12, 12};
         totallyNotSettings.put("cardsPer", counts);
         totallyNotSettings.put("deckType", DeckType.PINOCHLE);
-        totallyNotSettings.put("skipEnabled", true);
-        totallyNotSettings.put("discardEnabled", false);
-        totallyNotSettings.put("trickEnabled", true);
-        totallyNotSettings.put("passEnabled", false);
-        totallyNotSettings.put("showEnabled", true);
+        totallyNotSettings.put("skip", true);
+        totallyNotSettings.put("discard", false);
+        totallyNotSettings.put("trick", true);
+        totallyNotSettings.put("pass", false);
+        totallyNotSettings.put("show", true);
         totallyNotSettings.put("aceHigh", false);
-        totallyNotSettings.put("teamsEnabled", true);
-        totallyNotSettings.put("pointsEnabled", true);
-        totallyNotSettings.put("drawEnabled", false);
+        totallyNotSettings.put("teams", true);
+        totallyNotSettings.put("points", true);
+        totallyNotSettings.put("draw", false);
         totallyNotSettings.put("cardsPerTrick", 4);
         ObjectWriter ow = mapper.writer();
         String jsonBeforeURL = ow.writeValueAsString(totallyNotSettings);
         String encodedJSON = URLEncoder.encode(jsonBeforeURL, StandardCharsets.UTF_8);
-        int status = callHandler("/settings/GDUEI/" + encodedJSON, "PUT");
-        assert status == 200;
+        int status = callHandler("/settings/" + code + "/" + encodedJSON, "PUT");
+        assertEquals(status, 200);
     }
 
     private int callHandler(String tail, String requestMethod, boolean print) throws IOException {
@@ -181,6 +188,32 @@ public class JSONExperimentation {
             System.out.println(content);
         }
         return status;
+    }
+
+    private String callHandlerResponse(String tail, String requestMethod) throws IOException {
+        String baseEndpoint = "https://kax95zucj1.execute-api.us-west-2.amazonaws.com/dev/deckocards";
+        URL url = new URL(baseEndpoint + tail);
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.setRequestMethod(requestMethod);
+        con.setRequestProperty("Content-Type", "application/json");
+        con.setConnectTimeout(5000);
+        con.setReadTimeout(7000);
+        int status = con.getResponseCode();
+        InputStreamReader reader;
+        if (status > 299) {
+            reader = new InputStreamReader(con.getErrorStream());
+        } else {
+            reader = new InputStreamReader(con.getInputStream());
+        }
+        BufferedReader in = new BufferedReader(reader);
+        String inputLine;
+        StringBuffer content = new StringBuffer();
+        while ((inputLine = in.readLine()) != null) {
+            content.append(inputLine);
+        }
+        in.close();
+        con.disconnect();
+        return content.toString();
     }
 
     private int callHandler(String tail, String requestMethod) throws IOException {
