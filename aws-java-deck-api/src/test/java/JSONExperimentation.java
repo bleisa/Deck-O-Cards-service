@@ -22,6 +22,7 @@ public class JSONExperimentation {
     private static final Random R = new Random();
     private static final ObjectMapper mapper = new ObjectMapper();
     private static String code;
+
     @Before
     public void setup() throws IOException {
         code = callHandlerResponse("", "POST");

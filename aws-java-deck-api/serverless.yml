@@ -57,25 +57,25 @@ functions:
     handler: com.serverless.JoinGameHandler
     events:
       - http:
-          path: /deckocards/join/{code}/{name}
+          path: /deckocards/{code}/players
           method: put
   dealHand:
     handler: com.serverless.DealHandHandler
     events:
       - http:
-          path: /deckocards/deal/{code}
+          path: /deckocards/{code}/deal
           method: put
   takeTurn:
     handler: com.serverless.TakeMyTurnHandler
     events:
       - http:
-          path: /deckocards/turn/{code}/{card}/{how}/{pass}/{player}
+          path: /deckocards/{code}/turn
           method: put
   setSettings:
     handler: com.serverless.SetSettingsHandler
     events:
       - http:
-          path: /deckocards/settings/{code}/{settings}
+          path: /deckocards/{code}/settings
           method: put
   deleteGame:
     handler: com.serverless.DeleteGameHandler
@@ -87,13 +87,13 @@ functions:
     handler: com.serverless.StartGameHandler
     events:
       - http:
-          path: /deckocards/start/{code}
+          path: /deckocards/{code}/start
           method: put
   setTrump:
     handler: com.serverless.SetTrumpHandler
     events:
       - http:
-          path: /deckocards/trump/{code}/{trump}
+          path: /deckocards/{code}/trump
           method: put
   getGame:
     handler: com.serverless.GetGameHandler
@@ -105,13 +105,13 @@ functions:
     handler: com.serverless.ScoreHandler
     events:
       - http:
-          path: /deckocards/score/{code}/{name}/{points}
+          path: /deckocards/{code}/{name}/score
           method: put
   joinTeam:
     handler: com.serverless.JoinTeamHandler
     events:
       - http:
-          path: /deckocards/team/{code}/{name}/{team}
+          path: /deckocards/{code}/{name}/team
           method: put
   getPlayers:
     handler: com.serverless.GetPlayersHandler

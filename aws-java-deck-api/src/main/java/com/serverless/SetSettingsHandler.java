@@ -20,9 +20,10 @@ public class SetSettingsHandler implements RequestHandler<Map<String, Object>, A
 	@Override
 	public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
 		try {
-			String[] pieces = ((String) input.get("path")).split("/");
-			String code = pieces[3];
-			String settings = pieces[4];
+			JsonNode body = new ObjectMapper().readTree((String) input.get("body"));
+			Map<String, String> query = (Map<String, String>) input.get("pathParameters");
+			String code = query.get("code");
+			String settings = body.get("settings").asText();
 			Game g = new Game().getGame(code);
 			if (g != null) {
 				String json = URLDecoder.decode(settings, StandardCharsets.UTF_8);

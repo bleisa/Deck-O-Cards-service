@@ -1,9 +1,6 @@
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.serverless.dal.Card;
-import com.serverless.dal.Suit;
-import com.serverless.dal.DeckType;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -22,7 +19,7 @@ import static org.junit.Assert.assertNotEquals;
  * The primary testing class for the Game class with api endpoints
  */
 
-public class GameTest {
+public class GameClientTest {
     private static final Random R = new Random();
 
     // TODO: test discard, draw (w/ rummy)
@@ -95,7 +92,7 @@ public class GameTest {
     }
 
     private int joinTeam(String code, String playerName, String teamName) throws IOException {
-        return callHandler("/team/" + code + "/" + playerName + "/" + teamName, "PUT");
+        return callHandler("/" + code + "/" + playerName + "/team", "PUT", "{ \"teamName\": \"" + teamName + "\" }");
     }
 
     // check that poker deck works with trick collection
@@ -134,8 +131,8 @@ public class GameTest {
                         }
                     }
                     assertNotEquals(teammate, null);
-                    int status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/PASS/" +
-                            teammate + "/" + name, "PUT");
+                    TurnRequestBody body = new TurnRequestBody(c, name, WayToPlay.PASS, teammate);
+                    int status = callHandler("/" + code + "/turn", "PUT", mapper.writer().writeValueAsString(body));
                     assertEquals(status, 200);
                     for (int i = 0; i < players.size(); i++) {
                         String pl = players.get(i);
@@ -163,9 +160,9 @@ public class GameTest {
                     System.out.println(name + "'s hand is now " + hands.get(name));
                     System.out.println(teammate + "'s hand is now " + hands.get(teammate));
                 } else if (g.get("nextPlayer").asText().equals(name)) {
-                    int status = callHandler("/turn/" + code + "/" + null + "/SKIP/" +
-                            null + "/" + name, "PUT");
-                    assertEquals(status, 200);
+                    TurnRequestBody body = new TurnRequestBody(null, name, WayToPlay.SKIP, null);
+                    int status = callHandler("/" + code + "/turn", "PUT", mapper.writer().writeValueAsString(body));
+                    assertEquals(200, status);
                     System.out.println(name + " skipped their turn...");
                 }
             }
@@ -181,7 +178,8 @@ public class GameTest {
                 System.out.println(name + " is placing meld....");
                 Card c = hands.get(name).get(R.nextInt(hands.get(name).size()));
                 String card = mapper.writer().writeValueAsString(c);
-                int status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/SHOW/null/" + name, "PUT");
+                TurnRequestBody body = new TurnRequestBody(c, name, WayToPlay.SHOW, null);
+                int status = callHandler("/" + code + "/turn", "PUT", mapper.writer().writeValueAsString(body));
                 assertEquals(status, 200);
             }
             jsonGame = callHandlerResponse("/" + code, "GET");
@@ -206,7 +204,8 @@ public class GameTest {
                 assertNotEquals(cardNode, null);
                 Card c = new Card(Suit.valueOf(cardNode.get("suit").asText()), cardNode.get("value").asInt());
                 String card = mapper.writer().writeValueAsString(c);
-                int status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/PICKUP/null/" + name, "PUT");
+                TurnRequestBody body = new TurnRequestBody(c, name, WayToPlay.PICKUP, null);
+                int status = callHandler("/" + code + "/turn", "PUT", mapper.writer().writeValueAsString(body));
                 assertEquals(status, 200);
             }
         }
@@ -214,7 +213,7 @@ public class GameTest {
 
     private void playTrumpHand(List<String> players, Map<String, List<Card>> hands, String code, String trump) throws IOException {
         System.out.println(trump + " is trump");
-        int status = callHandler("/trump/" + code + "/" + trump, "PUT");
+        int status = callHandler("/" + code + "/trump", "PUT", "{ \"trump\": \"" + trump + "\" }");
         assertEquals(status, 200);
         int trickCount = 0;
         String jsonGame = callHandlerResponse("/" + code, "GET");
@@ -232,7 +231,8 @@ public class GameTest {
             }
             Card c = hands.get(currentPlayer).get(R.nextInt(hands.get(currentPlayer).size()));
             String card = mapper.writer().writeValueAsString(c);
-            status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/TRICK/null/" + currentPlayer, "PUT");
+            TurnRequestBody body = new TurnRequestBody(c, currentPlayer, WayToPlay.TRICK, null);
+            status = callHandler("/" + code + "/turn", "PUT", mapper.writer().writeValueAsString(body));
             assertEquals(status, 200);
             System.out.println(currentPlayer + " played " + c.toString() + " in a trick....");
             jsonGame = callHandlerResponse("/" + code, "GET");
@@ -255,7 +255,7 @@ public class GameTest {
     private void scoreHand(List<String> players, String code) throws IOException {
         for (String name: players) {
             int points = R.nextInt(100);
-            int status = callHandler("/score/" + code + "/" + name + "/" + points, "PUT");
+            int status = callHandler("/" + code + "/" + name + "/score", "PUT", "{ \"points\": " + points + " }");
             assertEquals(status, 200);
             String jsonGame = callHandlerResponse("/" + code, "GET");
             JsonNode g = new ObjectMapper().readTree(jsonGame);
@@ -322,6 +322,42 @@ public class GameTest {
         return status;
     }
 
+    private int callHandler(String tail, String requestMethod, String body, boolean print) throws IOException {
+        String baseEndpoint = "https://kax95zucj1.execute-api.us-west-2.amazonaws.com/dev/deckocards";
+        URL url = new URL(baseEndpoint + tail);
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.setRequestMethod(requestMethod);
+        con.setRequestProperty("Content-Type", "application/json");
+        con.setConnectTimeout(0);
+        con.setReadTimeout(0);
+        con.setDoOutput(true);
+        byte[] input = body.getBytes(StandardCharsets.UTF_8);
+        con.getOutputStream().write(input, 0, input.length);
+        int status = con.getResponseCode();
+        InputStreamReader reader;
+        if (status > 299) {
+            reader = new InputStreamReader(con.getErrorStream());
+        } else {
+            reader = new InputStreamReader(con.getInputStream());
+        }
+        BufferedReader in = new BufferedReader(reader);
+        String inputLine;
+        StringBuffer content = new StringBuffer();
+        while ((inputLine = in.readLine()) != null) {
+            content.append(inputLine);
+        }
+        in.close();
+        con.disconnect();
+        if (status > 299 || print) {
+            System.out.println(content);
+        }
+        return status;
+    }
+
+    private int callHandler(String tail, String requestMethod, String body) throws IOException {
+        return callHandler(tail, requestMethod, body, false);
+    }
+
     private int callHandler(String tail, String requestMethod) throws IOException {
         return callHandler(tail, requestMethod, false);
     }
@@ -342,7 +378,7 @@ public class GameTest {
     }
 
     private void startGame(String code, String settings, String gameType, Map<String, String> teams) throws IOException {
-        int status = callHandler("/settings/" + code + "/" + settings, "PUT");
+        int status = callHandler("/" + code + "/settings", "PUT", "{ \"settings\": \"" + settings + "\" }");
         assertEquals(status, 200);
         System.out.println("Settings have been set for " + gameType + "....");
         if (teams != null) {
@@ -351,18 +387,18 @@ public class GameTest {
                 assertEquals(status, 200);
             }
         }
-        status = callHandler("/start/" + code, "PUT");
-        assertEquals(status, 200);
+        status = callHandler("/" + code + "/start", "PUT");
+        assertEquals(200, status);
         System.out.println("Game has been started....");
-        status = callHandler("/deal/" + code, "PUT");
+        status = callHandler("/" + code + "/deal", "PUT");
         assertEquals(status, 200);
         System.out.println("Hands have been dealt....");
     }
 
     private void joinPlayers(String code, List<String> players) throws IOException {
         for (String name: players) {
-            int status = callHandler("/join/" + code + "/" + name, "PUT");
-            assertEquals(status, 200);
+            int status = callHandler("/" + code + "/players", "PUT", "{\"name\":\"" + name + "\"}");
+            assertEquals( 200, status);
         }
         System.out.println("Players have joined....");
     }

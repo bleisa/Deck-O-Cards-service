@@ -2,12 +2,16 @@ package com.serverless;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serverless.dal.CardConverter;
 import com.serverless.dal.Game;
 import com.serverless.dal.Player;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,14 +23,14 @@ public class ScoreHandler implements RequestHandler<Map<String, Object>, ApiGate
 	@Override
 	public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
 		try {
-			String[] pieces = ((String) input.get("path")).split("/");
-			String code = pieces[3];
-			String name = pieces[4];
-			String points = pieces[5];
+			JsonNode body = new ObjectMapper().readTree((String) input.get("body"));
+			Map<String, String> query = (Map<String, String>) input.get("pathParameters");
+			String code = query.get("code");
+			String name = query.get("name");
+			int points = body.get("points").asInt();
 			Game g = (new Game()).getGame(code);
 			if (g != null) {
-				int pointsInt = unconvertInt(points);
-				g.score(name, pointsInt);
+				g.score(name, points);
 				g.save(g);
 				Response responseBody = new Response("added score successfully", input);
 				return ApiGatewayResponse.builder()
@@ -55,14 +59,5 @@ public class ScoreHandler implements RequestHandler<Map<String, Object>, ApiGate
 					.setHeaders(headers)
 					.build();
 		}
-	}
-
-	private int unconvertInt(String s) {
-		int value = 0;
-		char[] digits = s.toCharArray();
-		for (char digit: digits) {
-			value = value * 10 + Character.getNumericValue(digit);
-		}
-		return value;
 	}
 }

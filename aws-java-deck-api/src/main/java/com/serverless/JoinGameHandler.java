@@ -22,9 +22,10 @@ public class JoinGameHandler implements RequestHandler<Map<String, Object>, ApiG
 	@Override
 	public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
 		try {
-			String[] pieces = ((String) input.get("path")).split("/");
-			String code = pieces[3];
-			String name = pieces[4];
+			Map<String, String> query = (Map<String, String>) input.get("pathParameters");
+			JsonNode body = new ObjectMapper().readTree((String) input.get("body"));
+			String code = query.get("code");
+			String name = body.get("name").asText();
 			Game g = (new Game()).getGame(code);
 			if (g != null) {
 				g.joinGame(name);

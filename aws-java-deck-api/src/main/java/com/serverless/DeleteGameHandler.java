@@ -18,8 +18,8 @@ public class DeleteGameHandler implements RequestHandler<Map<String, Object>, Ap
 	@Override
 	public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
 		try {
-			String[] pieces = ((String) input.get("path")).split("/");
-			String code = pieces[2];
+			Map<String, String> query = (Map<String, String>) input.get("pathParameters");
+			String code = query.get("code");
 			boolean success = new Game().delete(code);
 			Map<String, String> headers = new HashMap<>();
 			headers.put("X-Powered-By", "AWS Lambda & Serverless");

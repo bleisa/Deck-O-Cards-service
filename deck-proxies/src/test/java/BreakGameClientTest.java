@@ -1,4 +1,5 @@
-import com.serverless.dal.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,7 +18,7 @@ import static org.junit.Assert.assertEquals;
  * Let's break this
  */
 
-public class BreakGameTest {
+public class BreakGameClientTest {
     private static String code; // current game object being used for testing
 
     @Before
@@ -49,8 +50,7 @@ public class BreakGameTest {
         int status = callHandler("/start/" + code, "PUT");
         assertEquals(status, 500);
         // -- take turn before started
-        CardConverter cc = new CardConverter();
-        String card = cc.convert(new Card(Suit.HEARTS, 9));
+        String card = new ObjectMapper().writer().writeValueAsString(new Card(Suit.HEARTS, 9));
         status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/TRICK/null/Henry", "PUT", true);
         assertEquals(status, 500);
         // -- deal before started
@@ -78,15 +78,15 @@ public class BreakGameTest {
         status = callHandler("/deal/" + code, "PUT");
         assertEquals(status, 200);
         // -- ask for a non-existent player
-        card = cc.convert(new Card(Suit.HEARTS, 9));
+        card = new ObjectMapper().writer().writeValueAsString(new Card(Suit.HEARTS, 9));
         status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/TRICK/null/Rando", "PUT", true);
         assertEquals(status, 500);
         // -- play card player does not have
-        card = cc.convert(new Card(Suit.HEARTS, 6));
+        card = new ObjectMapper().writer().writeValueAsString(new Card(Suit.HEARTS, 9));
         status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/TRICK/null/Henry", "PUT", true);
         assertEquals(status, 500);
         // -- mismatch settings
-        card = cc.convert(new Card(Suit.HEARTS, 9));
+        card = new ObjectMapper().writer().writeValueAsString(new Card(Suit.HEARTS, 9));
         status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/DISCARD/null/Henry", "PUT", true);
         assertEquals(status, 500);
         // -- get a game that does not exist
@@ -155,13 +155,12 @@ public class BreakGameTest {
         return callHandler(tail, requestMethod, false);
     }
 
-    private String pinochleSettingsStringForURL() {
+    private String pinochleSettingsStringForURL() throws JsonProcessingException {
         int[] counts = {12, 12, 12, 12};
         return pinochleSettingsStringForURL(counts, false, false);
     }
 
-    private String pinochleSettingsStringForURL(int[] counts, boolean pass, boolean skip) {
-        SettingsConverter sc = new SettingsConverter();
+    private String pinochleSettingsStringForURL(int[] counts, boolean pass, boolean skip) throws JsonProcessingException {
         Settings settings = new Settings.SettingsBuilder(counts, DeckType.PINOCHLE)
                 .skip(skip)
                 .pass(pass)
@@ -171,6 +170,6 @@ public class BreakGameTest {
                 .teams(true)
                 .show(true)
                 .build();
-        return URLEncoder.encode(sc.convert(settings), StandardCharsets.UTF_8);
+        return URLEncoder.encode(new ObjectMapper().writer().writeValueAsString(settings));
     }
 }

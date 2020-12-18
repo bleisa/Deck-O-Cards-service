@@ -2,6 +2,8 @@ package com.serverless;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serverless.dal.Game;
 import com.serverless.dal.Suit;
 import org.apache.logging.log4j.LogManager;
@@ -18,9 +20,11 @@ public class SetTrumpHandler implements RequestHandler<Map<String, Object>, ApiG
 	@Override
 	public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
 		try {
-			String[] pieces = ((String) input.get("path")).split("/");
-			String code = pieces[3];
-			String trumpSuit = pieces[4];
+			ObjectMapper mapper = new ObjectMapper();
+			JsonNode body = mapper.readTree((String) input.get("body"));
+			Map<String, String> query = (Map<String, String>) input.get("pathParameters");
+			String code = query.get("code");
+			String trumpSuit = body.get("trump").asText();
 			Game g = (new Game()).getGame(code);
 			if (g != null) {
 				g.setTrump(Suit.valueOf(trumpSuit));

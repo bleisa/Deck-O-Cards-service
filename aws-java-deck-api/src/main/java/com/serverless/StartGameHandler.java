@@ -18,8 +18,8 @@ public class StartGameHandler implements RequestHandler<Map<String, Object>, Api
 	@Override
 	public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
 		try {
-			String[] pieces = ((String) input.get("path")).split("/");
-			String code = pieces[3];
+			Map<String, String> query = (Map<String, String>) input.get("pathParameters");
+			String code = query.get("code");
 			Game g = (new Game()).getGame(code);
 			if (g != null) {
 				g.startGame();

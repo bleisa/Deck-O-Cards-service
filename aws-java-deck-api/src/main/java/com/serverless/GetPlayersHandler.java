@@ -16,8 +16,8 @@ public class GetPlayersHandler implements RequestHandler<Map<String, Object>, Ap
 	@Override
 	public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
 		try {
-			String[] pieces = ((String) input.get("path")).split("/");
-			String code = pieces[2];
+			Map<String, String> query = (Map<String, String>) input.get("pathParameters");
+			String code = query.get("code");
 			Game g = new Game().getGame(code);
 			if (g != null) {
 				return ApiGatewayResponse.builder()

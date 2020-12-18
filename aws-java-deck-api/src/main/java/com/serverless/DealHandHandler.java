@@ -18,8 +18,8 @@ public class DealHandHandler implements RequestHandler<Map<String, Object>, ApiG
 	@Override
 	public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
 		try {
-			String[] pieces = ((String) input.get("path")).split("/");
-			String code = pieces[3];
+			Map<String, String> query = (Map<String, String>) input.get("pathParameters");
+			String code = query.get("code");
 			Game g = new Game().getGame(code);
 			if (g != null) {
 				g.deal();

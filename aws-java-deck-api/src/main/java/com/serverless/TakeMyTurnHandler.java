@@ -20,20 +20,21 @@ public class TakeMyTurnHandler implements RequestHandler<Map<String, Object>, Ap
 	@Override
 	public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
 		try {
-			String[] pieces = ((String) input.get("path")).split("/");
-			String code = pieces[3];
-			String cardString = pieces[4];
-			String howString = pieces[5];
-			String pass = pieces[6];
-			String player = pieces[7];
+			Map<String, String> query = (Map<String, String>) input.get("pathParameters");
+			JsonNode body = new ObjectMapper().readTree((String) input.get("body"));
+			String code = query.get("code");
+			JsonNode cardNode = body.get("cardPlayed");
+			Card c;
+			if (!cardNode.isNull()) {
+				c = new Card(Suit.valueOf(cardNode.get("suit").asText()), cardNode.get("value").asInt());
+			} else {
+				c = null;
+			}
+			String howString = body.get("how").asText();
+			String pass = body.get("passedTo").asText();
+			String player = body.get("playedBy").asText();
 			Game g = new Game().getGame(code);
 			if (g != null) {
-				Card c;
-				if (!cardString.equals("null")) {
-					c = (new CardConverter()).unconvert(URLDecoder.decode(cardString, StandardCharsets.UTF_8));
-				} else {
-					c = null;
-				}
 				WayToPlay how = (new WayToPlayConverter()).unconvert(howString);
 				g.takeTurn(player, c, how, pass);
 				g.save(g);

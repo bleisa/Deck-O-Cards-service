@@ -550,7 +550,7 @@ public class Game {
     public void score(String name, int points) {
         Player p = getPlayer(name);
         if (p == null) {
-            throw new IllegalArgumentException("Player does not exist");
+            throw new IllegalArgumentException("Player does not exist: " + name);
         }
         if (!started) {
             throw new IllegalStateException("Game has not started yet");
@@ -567,7 +567,7 @@ public class Game {
     public void joinTeam(String name, String team) {
         Player p = getPlayer(name);
         if (p == null) {
-            throw new IllegalArgumentException("Player does not exist");
+            throw new IllegalArgumentException("Player does not exist: " + name);
         }
         if (started) {
             throw new IllegalStateException("Cannot join team after game has started");
