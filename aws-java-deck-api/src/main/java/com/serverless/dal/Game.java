@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,43 +17,61 @@ import java.util.*;
  * Game is a mutable object representing the state of a card game. The state consists of the Players,
  * the Settings, whose turn it is to play, any cards that have been discarded (if applicable), any cards
  * in the draw pile (if applicable), and a join code unique to each Game.
+ *
+ * The getters and setters included should not be used; they are included only for DynamoDB support.
+ * In particular, setCode() must not be used.
  */
 
 @DynamoDBTable(tableName = "PLACEHOLDER")
 public class Game {
     private static final String GAMES_TABLE_NAME = "deck-o-cards-games-table";
+    private static final Logger LOG = LogManager.getLogger(Game.class);
+
     private final DynamoDBMapper dbMapper;
     private final AmazonDynamoDB ddb;
-
-    private static final Logger LOG = LogManager.getLogger(Game.class);
+    private final Random r;
 
     private final char[] alphabet = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
             'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
 
+    private String code;                          // the entry code for the game
+    private Settings settings;                          // the settings for the game
+    private boolean started;                            // whether the game has started
+
     private List<Player> players;
     private Map<String, Player> playerNames;
-    private String nextPlayer;
     private Map<String, Integer> playerIndices;
-    private Card cardPlayed;
-    private WayToPlay way;
-    private String code;
-    private Settings settings;
+
+    // important general game data
+
+    private String nextPlayer;                          // the name of the next player to play
+
+//    @DynamoDBTypeConverted(converter = CardConverter.class)
+//    @DynamoDBAttribute(attributeName = "card_played")
+//    @JsonProperty("cardPlayed")
+//    private Card cardPlayed;                            // the last card played
+//
+//    @DynamoDBTypeConvertedEnum
+//    @DynamoDBTypeConverted(converter = WayToPlayConverter.class)
+//    @DynamoDBAttribute(attributeName = "way_played")
+//    @JsonProperty("way")
+//    private WayToPlay way;                              // the way that cardPlayed was played
+
     private Suit trump;
 
     // fields for games with trick enabled
-    private List<Card> trick;
-    private List<Player> trickPlayers;
-    private int count;
+
+    private List<Card> trick;                           // the cards that have been played on the current trick, in order
+    private List<Player> trickPlayers;                  // the players who have played on the current trick, in order
+    private int count;                                  // the number of players who have played on the current trick
 
     // for if draw is enabled
-    private List<Card> draw;
+
+    private List<Card> draw;                            // the cards currently on the draw pile
 
     // for if discard is enabled
+
     private List<Card> discard;
-
-    private boolean started;
-
-    private final Random r;
 
     /**
      * Constructs a game with a join code but no players, no settings, and no discard or draw piles
@@ -75,8 +94,8 @@ public class Game {
         count = 0;
         discard = new ArrayList<>();
         draw = new ArrayList<>();
-        cardPlayed = null;
-        way = null;
+//        cardPlayed = null;
+//        way = null;
         code = generateCode();
     }
 
@@ -136,18 +155,25 @@ public class Game {
         this.started = started;
     }
 
-    @DynamoDBTypeConverted(converter = CardConverter.class)
-    @DynamoDBAttribute(attributeName = "card_played")
-    public Card getCardPlayed() { return cardPlayed; }
-    public void setCardPlayed(Card c) { cardPlayed = c; }
+//    @DynamoDBTypeConverted(converter = CardConverter.class)
+//    @DynamoDBAttribute(attributeName = "card_played")
+//    public Card getCardPlayed() { return cardPlayed; }
+//    public void setCardPlayed(Card c) { cardPlayed = c; }
 
-    @DynamoDBTypeConvertedEnum
-    @DynamoDBTypeConverted(converter = WayToPlayConverter.class)
-    @DynamoDBAttribute(attributeName = "way_played")
-    public WayToPlay getWay() { return this.way; }
-    public void setWay(WayToPlay way) { this.way = way; }
+//    @DynamoDBTypeConvertedEnum
+//    @DynamoDBTypeConverted(converter = WayToPlayConverter.class)
+//    @DynamoDBAttribute(attributeName = "way_played")
+//    public WayToPlay getWay() { return this.way; }
+//    public void setWay(WayToPlay way) { this.way = way; }
 
+
+    /**
+     * gets the entry code for this game
+     *
+     * @return the entry code
+     */
     @DynamoDBHashKey(attributeName = "code")
+    @JsonProperty("code")
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
 
@@ -307,8 +333,8 @@ public class Game {
             LOG.error(p.getName() + " does not have " + card.toString());
             throw new IllegalArgumentException("Player " + p.getName() + " does not have " + card.toString());
         }
-        cardPlayed = card;
-        way = how;
+//        cardPlayed = card;
+//        way = how;
         if (!(how.equals(WayToPlay.DRAW) || how.equals(WayToPlay.PICKUP))) {
             p.getHand().remove(card);
         }
