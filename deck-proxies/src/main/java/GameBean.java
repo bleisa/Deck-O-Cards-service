@@ -19,20 +19,28 @@ public class GameBean {
     @JsonProperty("nextPlayer")
     private String nextPlayer;
     private final String code;
+    @JsonProperty("settings")
     private Settings settings;
+    @JsonProperty("trump")
     private Suit trump;
 
     // fields for games with trick enabled
+    @JsonProperty("trick")
     private List<Card> trick;
+    @JsonProperty("trickPlayers")
     private List<Player> trickPlayers;
+    @JsonProperty("count")
     private int count;
 
     // for if draw is enabled
+    @JsonProperty("draw")
     private List<Card> draw;
 
     // for if discard is enabled
+    @JsonProperty("discard")
     private List<Card> discard;
 
+    @JsonProperty("started")
     private boolean started;
 
     public GameBean(@JsonProperty("code") String code) {
@@ -40,7 +48,7 @@ public class GameBean {
     }
 
     public List<Player> getPlayers() {
-        return players;
+        return List.copyOf(players);
     }
 
     public String getCode() {
@@ -64,51 +72,23 @@ public class GameBean {
     }
 
     public List<Card> getTrick() {
-        return this.trick;
-    }
-
-    public void setTrick(List<Card> trick) {
-        this.trick = trick;
+        return List.copyOf(this.trick);
     }
 
     public List<Player> getTrickPlayers() {
-        return this.trickPlayers;
-    }
-
-    public void setTrickPlayers(List<Player> trickPlayers) {
-        this.trickPlayers = trickPlayers;
-    }
-
-    public int getCount() {
-        return this.count;
-    }
-
-    public void setCount(int count) {
-        this.count = count;
+        return List.copyOf(this.trickPlayers);
     }
 
     public List<Card> getDraw() {
-        return this.draw;
-    }
-
-    public void setDraw(List<Card> draw) {
-        this.draw = draw;
+        return List.copyOf(this.draw);
     }
 
     public List<Card> getDiscard() {
-        return this.discard;
-    }
-
-    public void setDiscard(List<Card> discard) {
-        this.discard = discard;
+        return List.copyOf(this.discard);
     }
 
     public boolean getStarted() {
         return this.started;
-    }
-
-    public void setStarted(boolean started) {
-        this.started = started;
     }
 
     public String toJson() throws JsonProcessingException {
