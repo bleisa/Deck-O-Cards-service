@@ -176,16 +176,13 @@ public class GameClientTest {
         while (handCounts[0] > 12 || handCounts[1] < 12 || handCounts[2] > 12 || handCounts[3] < 12) {
             for (int i = 0; i < players.size(); i++) {
                 Player p = players.get(i);
-                if (g.getNextPlayer().equals(p) && p.getHand().size() > 12) {
+                if (g.getNextPlayer().equals(p) && p.numberOfCardsLeft() > 12) {
                     Player teammate = null;
                     System.out.println(p.getName() + " is passing....");
-                    Card c = p.getHand().get(R.nextInt(p.getHand().size()));
-                    int index = -1;
-                    for (int j = 0; j < players.size(); j++) {
-                        Player p2 = players.get(j);
+                    Card c = p.getFromHand(R.nextInt(p.numberOfCardsLeft()));
+                    for (Player p2 : players) {
                         if (!p2.equals(p) && p2.isOnSameTeam(p)) {
                             teammate = p2;
-                            index = j;
                             break;
                         }
                     }
@@ -203,12 +200,9 @@ public class GameClientTest {
                         }
                     }
                     g = getGame(code);
-                    players.remove(p);
-                    players.remove(teammate);
+                    players = g.getPlayers();
                     p = g.getPlayer(p.getName());
                     teammate = g.getPlayer(teammate.getName());
-                    players.add(i, p);
-                    players.add(index, teammate);
                     System.out.println(p.getName() + "'s hand is now " + p.getHand());
                     System.out.println(teammate.getName() + "'s hand is now " + teammate.getHand());
                 } else if (g.getNextPlayer().equals(p)) {
@@ -227,7 +221,7 @@ public class GameClientTest {
         for (Player p: g.getPlayers()) {
             if (g.getNextPlayer().equals(p)) {
                 System.out.println(p.getName() + " is placing meld....");
-                Card c = p.getHand().get(R.nextInt(p.getHand().size()));
+                Card c = p.getFromHand(R.nextInt(p.getHand().size()));
                 TurnRequestBody body = new TurnRequestBody(c, p, WayToPlay.SHOW, null);
                 int status = callHandler("/" + code + "/turn", "PUT", body.toJson());
                 assertEquals(200, status);
@@ -259,7 +253,7 @@ public class GameClientTest {
                 trickCount++;
                 System.out.println("\nTRICK " + trickCount + ":");
             }
-            Card c = currentPlayer.getHand().get(R.nextInt(currentPlayer.getHand().size()));
+            Card c = currentPlayer.getFromHand(R.nextInt(currentPlayer.getHand().size()));
             TurnRequestBody body = new TurnRequestBody(c, currentPlayer, WayToPlay.TRICK, null);
             status = callHandler("/" + code + "/turn", "PUT", body.toJson());
             assertEquals(200, status);

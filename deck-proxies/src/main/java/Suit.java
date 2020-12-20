@@ -6,7 +6,7 @@ public enum Suit {
     HEARTS, DIAMONDS, CLUBS, SPADES;
 
     /**
-     * 0 -> hearts, 1 -> diamonds, 2 -> clubs, 3-> spades
+     * 0 is hearts, 1 is diamonds, 2 is clubs, 3 is spades
      *
      * @param j indicates which suit to find - must be in [0, 3]
      * @return the suit corresponding to j

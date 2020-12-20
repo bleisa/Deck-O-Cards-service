@@ -9,15 +9,20 @@ import java.util.Objects;
 /**
  * A Player is a mutable representation of a player in a card game. A Player has a name, a hand
  * of cards, a score, and an optional team name.
+ *
+ * This Player is intended for use by the client.
  */
 
 public class Player {
     private static final boolean CHECK_REP = false;
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    @JsonProperty("hand")
     private List<Card> hand;
     private final String name;
+    @JsonProperty("collected")
     private List<Card> collected;
+    @JsonProperty("shown")
     private List<Card> shown;
     private int points;
     private String teamName;
@@ -64,19 +69,6 @@ public class Player {
     }
 
     /**
-     * Sets this player's hand
-     *
-     * @param hand the list of cards that the hand is set to - cannot be null
-     */
-    public void setHand(List<Card> hand) {
-        if (hand == null) {
-            throw new IllegalArgumentException("hand cannot be null");
-        }
-        this.hand = new ArrayList<>(hand);
-        checkRep();
-    }
-
-    /**
      * Returns the hand of this player
      *
      * @return the hand of this player
@@ -97,19 +89,6 @@ public class Player {
     }
 
     /**
-     * Sets the list of cards that this player has collected
-     *
-     * @param collected the new list of cards this player has collected - cannot be null
-     */
-    public void setCollected(List<Card> collected) {
-        if (collected == null) {
-            throw new IllegalArgumentException("collected cannot be null");
-        }
-        this.collected = new ArrayList<>(collected);
-        checkRep();
-    }
-
-    /**
      * Returns the cards this player is allowing all other players to view
      *
      * @return the list of cards on view
@@ -120,16 +99,6 @@ public class Player {
     }
 
     /**
-     * Sets the cards that this player is showing to other players
-     *
-     * @param shown the list of cards to be set to
-     */
-    public void setShown(List<Card> shown) {
-        this.shown = new ArrayList<>(shown);
-        checkRep();
-    }
-
-    /**
      * Returns this player's score
      *
      * @return the number of points this player has
@@ -137,16 +106,6 @@ public class Player {
     public int getPoints() {
         checkRep();
         return points;
-    }
-
-    /**
-     * Sets this player's score
-     *
-     * @param points the number of points to be given to this player
-     */
-    public void setPoints(int points) {
-        this.points = points;
-        checkRep();
     }
 
     /**
@@ -194,7 +153,7 @@ public class Player {
      * checks if another player is on the same team as this player
      *
      * @param p the other player to check
-     * @return whether {@param p} is on the same team as this player
+     * @return whether p is on the same team as this player
      */
     public boolean isOnSameTeam(Player p) {
         return this.teamName.equals(p.teamName);
@@ -216,6 +175,16 @@ public class Player {
      */
     public int numberOfCardsLeft() {
         return this.hand.size();
+    }
+
+    /**
+     * gets the card at index in this player's hand
+     *
+     * @param index the index to get
+     * @return the card at index from the player's hand
+     */
+    public Card getFromHand(int index) {
+        return this.hand.get(index);
     }
 
     /**

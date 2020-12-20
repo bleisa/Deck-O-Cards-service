@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * A TurnRequestBody provides the body for a TakeTurn request
  */
-public class TurnRequestBody {
+public final class TurnRequestBody {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @JsonProperty("cardPlayed")
