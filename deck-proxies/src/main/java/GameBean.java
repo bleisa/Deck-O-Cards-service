@@ -1,3 +1,4 @@
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,10 +14,10 @@ import java.util.List;
 public class GameBean {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    @JsonProperty("players")
     private List<Player> players;
+    @JsonProperty("nextPlayer")
     private String nextPlayer;
-//    private Card cardPlayed;
-//    private WayToPlay way;
     private final String code;
     private Settings settings;
     private Suit trump;
@@ -41,34 +42,6 @@ public class GameBean {
     public List<Player> getPlayers() {
         return players;
     }
-
-    public void setPlayers(List<Player> players) {
-        this.players = players;
-    }
-
-    public String getNextPlayer() {
-        return nextPlayer;
-    }
-
-    public void setNextPlayer(String nextPlayer) {
-        this.nextPlayer = nextPlayer;
-    }
-
-//    public Card getCardPlayed() {
-//        return cardPlayed;
-//    }
-//
-//    public void setCardPlayed(Card cardPlayed) {
-//        this.cardPlayed = cardPlayed;
-//    }
-//
-//    public WayToPlay getWay() {
-//        return way;
-//    }
-//
-//    public void setWay(WayToPlay way) {
-//        this.way = way;
-//    }
 
     public String getCode() {
         return code;
@@ -138,8 +111,23 @@ public class GameBean {
         this.started = started;
     }
 
-    public static String toJson(GameBean g) throws JsonProcessingException {
-        return MAPPER.writer().writeValueAsString(g);
+    public String toJson() throws JsonProcessingException {
+        return MAPPER.writer().writeValueAsString(this);
+    }
+
+    @JsonIgnore
+    public Player getNextPlayer() {
+        return getPlayer(nextPlayer);
+    }
+
+    @JsonIgnore
+    public Player getPlayer(String name) {
+        for (Player p: players) {
+            if (p.getName().equals(name)) {
+                return p;
+            }
+        }
+        return null;
     }
 
     public static GameBean fromJson(String s) throws IOException {

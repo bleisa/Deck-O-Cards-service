@@ -1,4 +1,6 @@
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
@@ -27,6 +29,8 @@ import java.util.Objects;
  */
 @JsonDeserialize(builder = Settings.SettingsBuilder.class)
 public final class Settings {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private final int[] cardsPer;
     private final DeckType deckType;
     private final boolean skip;
@@ -63,7 +67,6 @@ public final class Settings {
     public int[] getCardsPer() { return cardsPer; }
 
     public DeckType getDeckType() { return deckType; }
-    //public void setDeckType(DeckType type) { this.deckType = type; }
 
     public boolean getSkip() { return skip; }
 
@@ -82,6 +85,10 @@ public final class Settings {
     public boolean isDraw() { return draw; }
 
     public boolean isPoints() { return points; }
+
+    public String toJson() throws JsonProcessingException {
+        return MAPPER.writeValueAsString(this);
+    }
 
     @Override
     public boolean equals(Object o) {

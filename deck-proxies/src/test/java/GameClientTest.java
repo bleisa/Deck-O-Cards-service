@@ -1,6 +1,3 @@
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -8,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -28,17 +24,12 @@ public class GameClientTest {
     @Test
     public void sampleRummyGameTest() throws IOException {
         String code = createGame("rummy");
-        List<String> players = List.of("Me", "Bobby", "Joe");
-        joinPlayers(code, players);
-        String settings = rummySettingsStringForURL();
+        joinPlayers(code, List.of("Me", "Bobby", "Joe"));
+        Settings settings = rummySettings();
         startGame(code, settings, "rummy", null);
-        String jsonGame = callHandlerResponse("/" + code, "GET");
-        JsonNode gameNode = new ObjectMapper().readTree(jsonGame);
-        Map<String, List<Card>> hands = getHands(gameNode, players);
-        int first = gameNode.get("nextPlayer").asInt();
         System.out.println("Beginning play....");
         // TODO: playRummyHand(players, code, hands, first);
-        scoreHand(players, code);
+        scoreHand(code);
         endGame(code);
     }
 
@@ -47,22 +38,18 @@ public class GameClientTest {
     @Test
     public void samplePinochleGameTest() throws IOException {
         String code = createGame("pinochle");
-        List<String> players = List.of("Me", "Billy", "Bobby", "Joe");
-        joinPlayers(code, players);
-        String settings = pinochleSettingsStringForURL();
+        joinPlayers(code, List.of("Me", "Billy", "Bobby", "Joe"));
+        Settings settings = pinochleSettings();
         Map<String, String> teams = new HashMap<>();
         teams.put("Me", "We");
         teams.put("Billy", "We");
         teams.put("Bobby", "They");
         teams.put("Joe", "They");
         startGame(code, settings, "pinochle", teams);
-        String jsonGame = callHandlerResponse("/" + code, "GET");
-        JsonNode gameNode = new ObjectMapper().readTree(jsonGame);
-        Map<String, List<Card>> hands = getHands(gameNode, players);
         System.out.println("Beginning play...");
-        meldPinochleHand(players, hands, code);
-        playTrumpHand(players, hands, code, Suit.valueOf(R.nextInt(4)).toString());
-        scoreHand(players, code);
+        meldPinochleHand(code);
+        playTrumpHand(code, Suit.valueOf(R.nextInt(4)).toString());
+        scoreHand(code);
         endGame(code);
     }
 
@@ -70,202 +57,243 @@ public class GameClientTest {
     @Test
     public void samplePassPinochleGameTest() throws IOException {
         String code = createGame("pass pinochle");
-        List<String> players = List.of("Me", "Billy", "Bobby", "Joe");
-        joinPlayers(code, players);
+        joinPlayers(code, List.of("Me", "Billy", "Bobby", "Joe"));
         int[] counts = {16, 8, 16, 8};
-        String settings = pinochleSettingsStringForURL(counts, true, true);
+        Settings settings = pinochleSettings(counts, true, true);
         Map<String, String> teams = new HashMap<>();
         teams.put("Me", "We");
         teams.put("Billy", "We");
         teams.put("Bobby", "They");
         teams.put("Joe", "They");
         startGame(code, settings, "pass pinochle", teams);
-        String jsonGame = callHandlerResponse("/" + code, "GET");
-        JsonNode g = new ObjectMapper().readTree(jsonGame);
-        Map<String, List<Card>> hands = getHands(g, players);
         System.out.println("Beginning play...");
-        passPinochleHand(players, hands, teams, code);
-        meldPinochleHand(players, hands, code);
-        playTrumpHand(players, hands, code, Suit.valueOf(R.nextInt(4)).toString());
-        scoreHand(players, code);
+        passPinochleHand(code);
+        meldPinochleHand(code);
+        playTrumpHand(code, Suit.valueOf(R.nextInt(4)).toString());
+        scoreHand(code);
         endGame(code);
-    }
-
-    private int joinTeam(String code, String playerName, String teamName) throws IOException {
-        return callHandler("/" + code + "/" + playerName + "/team", "PUT", "{ \"teamName\": \"" + teamName + "\" }");
     }
 
     // check that poker deck works with trick collection
     @Test
     public void sampleHeartsGameTest() throws IOException {
         String code = createGame("hearts");
-        List<String> players = List.of("Me", "Billy", "Bob", "Joe");
-        joinPlayers(code, players);
-        String settings = heartsSettingsStringForURL();
+        joinPlayers(code, List.of("Me", "Billy", "Bob", "Joe"));
+        Settings settings = heartsSettings();
         startGame(code, settings, "hearts", null);
-        String jsonGame = callHandlerResponse("/" + code, "GET");
-        JsonNode g = new ObjectMapper().readTree(jsonGame);
-        Map<String, List<Card>> hands = getHands(g, players);
         System.out.println("Beginning play...");
-        playTrumpHand(players, hands, code, "HEARTS");
-        scoreHand(players, code);
+        playTrumpHand(code, "HEARTS");
+        scoreHand(code);
         endGame(code);
     }
 
-    private void passPinochleHand(List<String> players, Map<String, List<Card>> hands, Map<String, String> teams, String code) throws IOException {
+    private String createGame(String gameType) throws IOException {
+        System.out.println("Starting " + gameType + " game....");
+        String code = callHandlerResponse("/", "POST");
+        assertEquals(code.length(), 5);
+        System.out.println("Game code is " + code);
+        return code;
+    }
+
+    private void startGame(String code, Settings s, String gameType, Map<String, String> teams) throws IOException {
+        GameBean g = getGame(code);
+        g.setSettings(s);
+        int status = callHandler("/" + code + "/settings", "PUT", g.toJson());
+        assertEquals(200, status);
+        System.out.println("Settings have been set for " + gameType + "....");
+        if (teams != null) {
+            for (Player p: g.getPlayers()) {
+                status = joinTeam(code, p, teams.get(p.getName()));
+                assertEquals(200, status);
+            }
+        }
+        status = callHandler("/" + code + "/start", "PUT");
+        assertEquals(200, status);
+        System.out.println("Game has been started....");
+        status = callHandler("/" + code + "/deal", "PUT");
+        assertEquals(200, status);
+        System.out.println("Hands have been dealt....");
+    }
+
+    private void joinPlayers(String code, List<String> players) throws IOException {
+        for (String name: players) {
+            Player p = new Player(name);
+            int status = callHandler("/" + code + "/players", "PUT", p.toJson());
+            assertEquals( 200, status);
+        }
+        System.out.println("Players have joined....");
+    }
+
+    private int joinTeam(String code, Player p, String teamName) throws IOException {
+        p.setTeamName(teamName);
+        return callHandler("/" + code + "/" + p.getName() + "/team", "PUT", p.toJson());
+    }
+
+    private Settings pinochleSettings() {
+        int[] counts = {12, 12, 12, 12};
+        return pinochleSettings(counts, false, false);
+    }
+
+    private Settings pinochleSettings(int[] counts, boolean pass, boolean skip) {
+        return new Settings.SettingsBuilder(counts, DeckType.PINOCHLE)
+                .skip(skip)
+                .pass(pass)
+                .trick(true)
+                .show(true)
+                .teams(true)
+                .draw(true)
+                .build();
+    }
+
+    private Settings heartsSettings(){
+        int[] counts = {13, 13, 13, 13};
+        return new Settings.SettingsBuilder(counts, DeckType.POKER)
+                .trick(true)
+                .aceHigh(true)
+                .draw(true)
+                .build();
+    }
+
+    private Settings rummySettings() {
+        int[] counts = {7, 7, 7};
+        return new Settings.SettingsBuilder(counts, DeckType.POKER)
+                .discard(true)
+                .show(true)
+                .points(true)
+                .draw(true)
+                .build();
+    }
+
+    private GameBean getGame(String code) throws IOException {
+        String json = callHandlerResponse("/" + code, "GET");
+        return GameBean.fromJson(json);
+    }
+
+    private void passPinochleHand(String code) throws IOException {
         int[] handCounts = {16, 8, 16, 8};
-        ObjectMapper mapper = new ObjectMapper();
+        GameBean g = getGame(code);
+        List<Player> players = g.getPlayers();
         while (handCounts[0] > 12 || handCounts[1] < 12 || handCounts[2] > 12 || handCounts[3] < 12) {
-            for (String name: players) {
-                String jsonGame = callHandlerResponse("/" + code, "GET");
-                JsonNode g = mapper.readTree(jsonGame);
-                if (g.get("nextPlayer").asText().equals(name) && hands.get(name).size() > 12) {
-                    String teammate = null;
-                    System.out.println(name + " is passing....");
-                    Card c = hands.get(name).get(R.nextInt(hands.get(name).size()));
-                    String card = mapper.writer().writeValueAsString(c);
-                    for (String p2: players) {
-                        if (!p2.equals(name) && teams.get(p2).equals(teams.get(name))) {
+            for (int i = 0; i < players.size(); i++) {
+                Player p = players.get(i);
+                if (g.getNextPlayer().equals(p) && p.getHand().size() > 12) {
+                    Player teammate = null;
+                    System.out.println(p.getName() + " is passing....");
+                    Card c = p.getHand().get(R.nextInt(p.getHand().size()));
+                    int index = -1;
+                    for (int j = 0; j < players.size(); j++) {
+                        Player p2 = players.get(j);
+                        if (!p2.equals(p) && p2.isOnSameTeam(p)) {
                             teammate = p2;
+                            index = j;
                             break;
                         }
                     }
-                    assertNotEquals(teammate, null);
-                    TurnRequestBody body = new TurnRequestBody(c, name, WayToPlay.PASS, teammate);
-                    int status = callHandler("/" + code + "/turn", "PUT", mapper.writer().writeValueAsString(body));
-                    assertEquals(status, 200);
-                    for (int i = 0; i < players.size(); i++) {
-                        String pl = players.get(i);
-                        if (pl.equals(name)) {
-                            handCounts[i]--;
-                        } else if (pl.equals(teammate)) {
-                            handCounts[i]++;
-                        }
-                    }
-                    jsonGame = callHandlerResponse("/" + code, "GET");
-                    g = mapper.readTree(jsonGame);
-                    JsonNode playerData = null;
-                    JsonNode teammateData = null;
-                    for (JsonNode child: g.get("players")) {
-                        if (child.get("name").asText().equals(name)) {
-                            playerData = child;
-                        } else if (child.get("name").asText().equals(teammate)) {
-                            teammateData = child;
-                        }
-                    }
-                    assertNotEquals(playerData, null);
-                    assertNotEquals(teammateData, null);
-                    hands.put(name, jsonToCardList(playerData.get("hand")));
-                    hands.put(teammate, jsonToCardList(teammateData.get("hand")));
-                    System.out.println(name + "'s hand is now " + hands.get(name));
-                    System.out.println(teammate + "'s hand is now " + hands.get(teammate));
-                } else if (g.get("nextPlayer").asText().equals(name)) {
-                    TurnRequestBody body = new TurnRequestBody(null, name, WayToPlay.SKIP, null);
-                    int status = callHandler("/" + code + "/turn", "PUT", mapper.writer().writeValueAsString(body));
+                    assertNotEquals(null, teammate);
+                    assert teammate != null;
+                    TurnRequestBody body = new TurnRequestBody(c, p, WayToPlay.PASS, teammate);
+                    int status = callHandler("/" + code + "/turn", "PUT", body.toJson());
                     assertEquals(200, status);
-                    System.out.println(name + " skipped their turn...");
-                }
-            }
-        }
-    }
-
-    private void meldPinochleHand(List<String> players, Map<String, List<Card>> hands, String code) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        for (String name: players) {
-            String jsonGame = callHandlerResponse("/" + code, "GET");
-            JsonNode g = mapper.readTree(jsonGame);
-            if (g.get("nextPlayer").asText().equals(name)) {
-                System.out.println(name + " is placing meld....");
-                Card c = hands.get(name).get(R.nextInt(hands.get(name).size()));
-                String card = mapper.writer().writeValueAsString(c);
-                TurnRequestBody body = new TurnRequestBody(c, name, WayToPlay.SHOW, null);
-                int status = callHandler("/" + code + "/turn", "PUT", mapper.writer().writeValueAsString(body));
-                assertEquals(status, 200);
-            }
-            jsonGame = callHandlerResponse("/" + code, "GET");
-            g = mapper.readTree(jsonGame);
-            for (JsonNode child: g.get("players")) {
-                if (child.get("name").asText().equals(name)) {
-                    System.out.println(name + " is melding " + child.get("shown").asText());
-                }
-            }
-        }
-        for (String name: players) {
-            String jsonGame = callHandlerResponse("/" + code, "GET");
-            JsonNode g = mapper.readTree(jsonGame);
-            if (g.get("nextPlayer").asText().equals(name)) {
-                JsonNode cardNode = null;
-                for (JsonNode child : g.get("players")) {
-                    if (child.get("name").asText().equals(name)) {
-                        cardNode = child.get("shown").get(0);
-                        break;
+                    for (int j = 0; j < g.getPlayers().size(); j++) {
+                        Player pl = g.getPlayers().get(j);
+                        if (pl.equals(p)) {
+                            handCounts[j]--;
+                        } else if (pl.equals(teammate)) {
+                            handCounts[j]++;
+                        }
                     }
+                    g = getGame(code);
+                    players.remove(p);
+                    players.remove(teammate);
+                    p = g.getPlayer(p.getName());
+                    teammate = g.getPlayer(teammate.getName());
+                    players.add(i, p);
+                    players.add(index, teammate);
+                    System.out.println(p.getName() + "'s hand is now " + p.getHand());
+                    System.out.println(teammate.getName() + "'s hand is now " + teammate.getHand());
+                } else if (g.getNextPlayer().equals(p)) {
+                    TurnRequestBody body = new TurnRequestBody(null, p, WayToPlay.SKIP, null);
+                    int status = callHandler("/" + code + "/turn", "PUT", body.toJson());
+                    assertEquals(200, status);
+                    System.out.println(p.getName() + " skipped their turn...");
+                    g = getGame(code);
                 }
-                assertNotEquals(cardNode, null);
-                Card c = new Card(Suit.valueOf(cardNode.get("suit").asText()), cardNode.get("value").asInt());
-                String card = mapper.writer().writeValueAsString(c);
-                TurnRequestBody body = new TurnRequestBody(c, name, WayToPlay.PICKUP, null);
-                int status = callHandler("/" + code + "/turn", "PUT", mapper.writer().writeValueAsString(body));
-                assertEquals(status, 200);
             }
         }
     }
 
-    private void playTrumpHand(List<String> players, Map<String, List<Card>> hands, String code, String trump) throws IOException {
-        System.out.println(trump + " is trump");
-        int status = callHandler("/" + code + "/trump", "PUT", "{ \"trump\": \"" + trump + "\" }");
-        assertEquals(status, 200);
-        int trickCount = 0;
-        String jsonGame = callHandlerResponse("/" + code, "GET");
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode g = mapper.readTree(jsonGame);
-        Map<String, List<Card>> collected = new HashMap<>();
-        for (String player: players) {
-            collected.put(player, new ArrayList<>());
+    private void meldPinochleHand(String code) throws IOException {
+        GameBean g = getGame(code);
+        for (Player p: g.getPlayers()) {
+            if (g.getNextPlayer().equals(p)) {
+                System.out.println(p.getName() + " is placing meld....");
+                Card c = p.getHand().get(R.nextInt(p.getHand().size()));
+                TurnRequestBody body = new TurnRequestBody(c, p, WayToPlay.SHOW, null);
+                int status = callHandler("/" + code + "/turn", "PUT", body.toJson());
+                assertEquals(200, status);
+            }
+            g = getGame(code);
+            System.out.println(p.getName() + " is melding " + g.getPlayer(p.getName()).getShown());
         }
-        String currentPlayer = g.get("nextPlayer").asText();
-        while (!hands.get(currentPlayer).isEmpty()) {
-            if (g.get("trick").size() == 0) {
+        for (Player p: g.getPlayers()) {
+            g = getGame(code);
+            if (g.getNextPlayer().equals(p) && g.getPlayer(p.getName()).getShown().size() > 0) {
+                Card c = g.getPlayer(p.getName()).getShown().get(0);
+                TurnRequestBody body = new TurnRequestBody(c, p, WayToPlay.PICKUP, null);
+                int status = callHandler("/" + code + "/turn", "PUT", body.toJson());
+                assertEquals(200, status);
+            }
+        }
+    }
+
+    private void playTrumpHand(String code, String trump) throws IOException {
+        GameBean g = getGame(code);
+        g.setTrump(Suit.valueOf(trump));
+        System.out.println(trump + " is trump");
+        int status = callHandler("/" + code + "/trump", "PUT", g.toJson());
+        assertEquals(200, status);
+        int trickCount = 0;
+        Player currentPlayer = g.getNextPlayer();
+        while (currentPlayer.hasCardsLeft()) {
+            if (g.getTrick().size() == 0) {
                 trickCount++;
                 System.out.println("\nTRICK " + trickCount + ":");
             }
-            Card c = hands.get(currentPlayer).get(R.nextInt(hands.get(currentPlayer).size()));
-            String card = mapper.writer().writeValueAsString(c);
+            Card c = currentPlayer.getHand().get(R.nextInt(currentPlayer.getHand().size()));
             TurnRequestBody body = new TurnRequestBody(c, currentPlayer, WayToPlay.TRICK, null);
-            status = callHandler("/" + code + "/turn", "PUT", mapper.writer().writeValueAsString(body));
-            assertEquals(status, 200);
-            System.out.println(currentPlayer + " played " + c.toString() + " in a trick....");
-            jsonGame = callHandlerResponse("/" + code, "GET");
-            g = mapper.readTree(jsonGame);
-            JsonNode playerData = null;
-            for (JsonNode child: g.get("players")) {
-                if (child.get("name").asText().equals(currentPlayer)) {
-                    playerData = child;
-                }
-            }
-            assertNotEquals(playerData, null);
-            hands.put(currentPlayer, jsonToCardList(playerData.get("hand")));
-            collected.put(currentPlayer, jsonToCardList(playerData.get("collected")));
-            System.out.println("\t" + currentPlayer + "'s hand is now " + hands.get(currentPlayer));
-            System.out.println("\t" + currentPlayer + " has collected " + collected.get(currentPlayer));
-            currentPlayer = g.get("nextPlayer").asText();
+            status = callHandler("/" + code + "/turn", "PUT", body.toJson());
+            assertEquals(200, status);
+            System.out.println(currentPlayer.getName() + " played " + c.toString() + " in a trick....");
+            g = getGame(code);
+            currentPlayer = g.getPlayer(currentPlayer.getName());
+            System.out.println("\t" + currentPlayer.getName() + "'s hand is now " + currentPlayer.getHand());
+            System.out.println("\t" + currentPlayer.getName() + " has collected " + currentPlayer.getCollected());
+            currentPlayer = g.getNextPlayer();
         }
     }
 
-    private void scoreHand(List<String> players, String code) throws IOException {
-        for (String name: players) {
+    private void scoreHand(String code) throws IOException {
+        GameBean g = getGame(code);
+        for (Player p: g.getPlayers()) {
+            int prevScore = p.getPoints();
             int points = R.nextInt(100);
-            int status = callHandler("/" + code + "/" + name + "/score", "PUT", "{ \"points\": " + points + " }");
-            assertEquals(status, 200);
-            String jsonGame = callHandlerResponse("/" + code, "GET");
-            JsonNode g = new ObjectMapper().readTree(jsonGame);
-            for (JsonNode child: g.get("players")) {
-                if (child.get("name").asText().equals(name)) {
-                    System.out.println(name + " has " + child.get("points"));
-                }
-            }
+            p.addPoints(points);
+            int status = callHandler("/" + code + "/" + p.getName() + "/score", "PUT", p.toJson());
+            assertEquals(200, status);
+            g = getGame(code);
+            System.out.println(p.getName() + " has " + g.getPlayer(p.getName()).getPoints());
+            assertEquals(points + prevScore, g.getPlayer(p.getName()).getPoints());
         }
     }
+
+    private void endGame(String code) throws IOException {
+        System.out.println("Ending game....");
+        int status = callHandler("/" + code, "DELETE");
+        assertEquals(status, 200);
+        System.out.println("Test successful");
+    }
+
+    /* Various methods for calling handlers */
 
     private String callHandlerResponse(String tail, String requestMethod) throws IOException {
         String baseEndpoint = "https://kax95zucj1.execute-api.us-west-2.amazonaws.com/dev/deckocards";
@@ -360,130 +388,5 @@ public class GameClientTest {
 
     private int callHandler(String tail, String requestMethod) throws IOException {
         return callHandler(tail, requestMethod, false);
-    }
-
-    private String createGame(String gameType) throws IOException {
-        System.out.println("Starting " + gameType + " game....");
-        String code = callHandlerResponse("/", "POST");
-        assertEquals(code.length(), 5);
-        System.out.println("Game code is " + code);
-        return code;
-    }
-
-    private void endGame(String code) throws IOException {
-        System.out.println("Ending game....");
-        int status = callHandler("/" + code, "DELETE");
-        assertEquals(status, 200);
-        System.out.println("Test successful");
-    }
-
-    private void startGame(String code, String settings, String gameType, Map<String, String> teams) throws IOException {
-        int status = callHandler("/" + code + "/settings", "PUT", "{ \"settings\": \"" + settings + "\" }");
-        assertEquals(status, 200);
-        System.out.println("Settings have been set for " + gameType + "....");
-        if (teams != null) {
-            for (String player: teams.keySet()) {
-                status = joinTeam(code, player, teams.get(player));
-                assertEquals(status, 200);
-            }
-        }
-        status = callHandler("/" + code + "/start", "PUT");
-        assertEquals(200, status);
-        System.out.println("Game has been started....");
-        status = callHandler("/" + code + "/deal", "PUT");
-        assertEquals(status, 200);
-        System.out.println("Hands have been dealt....");
-    }
-
-    private void joinPlayers(String code, List<String> players) throws IOException {
-        for (String name: players) {
-            int status = callHandler("/" + code + "/players", "PUT", "{\"name\":\"" + name + "\"}");
-            assertEquals( 200, status);
-        }
-        System.out.println("Players have joined....");
-    }
-
-    private Map<String, List<Card>> getHands(JsonNode gameNode, List<String> players) {
-        Map<String, List<Card>> hands = new HashMap<>();
-        JsonNode playersNode = gameNode.get("players");
-        for (String name: players) {
-            for (JsonNode node: playersNode) {
-                if (node.get("name").asText().equals(name)) {
-                    List<Card> hand = jsonToCardList(node.get("hand"));
-                    hands.put(name, hand);
-                }
-            }
-        }
-        System.out.println("All players have their hands....");
-        return hands;
-    }
-
-    private List<Card> jsonToCardList(JsonNode cardList) {
-        List<Card> cards = new ArrayList<>();
-        for (JsonNode card: cardList) {
-            cards.add(new Card(Suit.valueOf(card.get("suit").asText()), card.get("value").asInt()));
-        }
-        return cards;
-    }
-
-    private String pinochleSettingsStringForURL() throws JsonProcessingException {
-        int[] counts = {12, 12, 12, 12};
-        return pinochleSettingsStringForURL(counts, false, false);
-    }
-
-    private String pinochleSettingsStringForURL(int[] counts, boolean pass, boolean skip) throws JsonProcessingException {
-        Map<String, Object> settings = new HashMap<>();
-        settings.put("cardsPer", counts);
-        settings.put("deckType", DeckType.PINOCHLE);
-        settings.put("skip", skip);
-        settings.put("discard", false);
-        settings.put("trick", true);
-        settings.put("pass", pass);
-        settings.put("show", true);
-        settings.put("aceHigh", false);
-        settings.put("teams", true);
-        settings.put("points", false);
-        settings.put("draw", true);
-        settings.put("cardsPerTrick", 4);
-        String json = new ObjectMapper().writeValueAsString(settings);
-        return URLEncoder.encode(json, StandardCharsets.UTF_8);
-    }
-
-    private String heartsSettingsStringForURL() throws JsonProcessingException {
-        int[] counts = {13, 13, 13, 13};
-        Map<String, Object> settings = new HashMap<>();
-        settings.put("cardsPer", counts);
-        settings.put("deckType", DeckType.POKER);
-        settings.put("skip", false);
-        settings.put("discard", false);
-        settings.put("trick", true);
-        settings.put("pass", false);
-        settings.put("show", false);
-        settings.put("aceHigh", true);
-        settings.put("teams", false);
-        settings.put("points", false);
-        settings.put("draw", true);
-        settings.put("cardsPerTrick", 4);
-        String json = new ObjectMapper().writeValueAsString(settings);
-        return URLEncoder.encode(json, StandardCharsets.UTF_8);
-    }
-
-    private String rummySettingsStringForURL() throws JsonProcessingException {
-        Map<String, Object> settings = new HashMap<>();
-        int[] counts = {7, 7, 7};
-        settings.put("cardsPer", counts);
-        settings.put("deckType", DeckType.POKER);
-        settings.put("skip", false);
-        settings.put("discard", true);
-        settings.put("trick", false);
-        settings.put("pass", false);
-        settings.put("show", true);
-        settings.put("aceHigh", false);
-        settings.put("teams", false);
-        settings.put("points", true);
-        settings.put("draw", true);
-        settings.put("cardsPerTrick", 0);
-        String json = new ObjectMapper().writeValueAsString(settings);
-        return URLEncoder.encode(json, StandardCharsets.UTF_8);
     }
 }

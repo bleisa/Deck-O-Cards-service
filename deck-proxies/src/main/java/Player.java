@@ -1,4 +1,6 @@
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +13,8 @@ import java.util.Objects;
 
 public class Player {
     private static final boolean CHECK_REP = false;
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private List<Card> hand;
     private final String name;
     private List<Card> collected;
@@ -56,15 +60,19 @@ public class Player {
      */
     public String getName() {
         checkRep();
-        return name; }
+        return name;
+    }
 
     /**
      * Sets this player's hand
      *
-     * @param hand the list of cards that the hand is set to
+     * @param hand the list of cards that the hand is set to - cannot be null
      */
     public void setHand(List<Card> hand) {
-        this.hand = hand;
+        if (hand == null) {
+            throw new IllegalArgumentException("hand cannot be null");
+        }
+        this.hand = new ArrayList<>(hand);
         checkRep();
     }
 
@@ -75,7 +83,7 @@ public class Player {
      */
     public List<Card> getHand() {
         checkRep();
-        return hand;
+        return List.copyOf(this.hand);
     }
 
     /**
@@ -85,16 +93,19 @@ public class Player {
      */
     public List<Card> getCollected() {
         checkRep();
-        return collected;
+        return List.copyOf(collected);
     }
 
     /**
      * Sets the list of cards that this player has collected
      *
-     * @param collected the new list of cards this player has collected
+     * @param collected the new list of cards this player has collected - cannot be null
      */
     public void setCollected(List<Card> collected) {
-        this.collected = collected;
+        if (collected == null) {
+            throw new IllegalArgumentException("collected cannot be null");
+        }
+        this.collected = new ArrayList<>(collected);
         checkRep();
     }
 
@@ -105,7 +116,7 @@ public class Player {
      */
     public List<Card> getShown() {
         checkRep();
-        return shown;
+        return List.copyOf(shown);
     }
 
     /**
@@ -114,7 +125,7 @@ public class Player {
      * @param shown the list of cards to be set to
      */
     public void setShown(List<Card> shown) {
-        this.shown = shown;
+        this.shown = new ArrayList<>(shown);
         checkRep();
     }
 
@@ -167,6 +178,44 @@ public class Player {
     public void setTeamName(String teamName) {
         this.teamName = teamName;
         checkRep();
+    }
+
+    /**
+     * gets the JSON representation of this object
+     *
+     * @return the JSON string representation of this object
+     * @throws JsonProcessingException if conversion fails
+     */
+    public String toJson() throws JsonProcessingException {
+        return MAPPER.writeValueAsString(this);
+    }
+
+    /**
+     * checks if another player is on the same team as this player
+     *
+     * @param p the other player to check
+     * @return whether {@param p} is on the same team as this player
+     */
+    public boolean isOnSameTeam(Player p) {
+        return this.teamName.equals(p.teamName);
+    }
+
+    /**
+     * checks if this player still has cards left in their hand
+     *
+     * @return whether this player still has cards in their hand
+     */
+    public boolean hasCardsLeft() {
+        return !this.hand.isEmpty();
+    }
+
+    /**
+     * gets the number of cards left in this player's hand
+     *
+     * @return the number of cards left in this player's hand
+     */
+    public int numberOfCardsLeft() {
+        return this.hand.size();
     }
 
     /**
