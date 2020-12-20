@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -29,72 +28,95 @@ public class BreakGameClientTest {
     // -- same player names
     @Test
     public void joinTwoOfSameHTTPTest() throws IOException {
-        int status = callHandler("/join/" + code + "/Emma", "PUT");
-        assertEquals(status, 200);
-        status = callHandler("/join/" + code + "/Emma", "PUT");
-        assertEquals(status, 500);
+        Player p = new Player("Billy");
+        int status = callHandler("/" + code + "/players", "PUT", p.toJson());
+        assertEquals(200, status);
+        status = callHandler("/" + code + "/players", "PUT", p.toJson());
+        assertEquals(500, status);
     }
 
     // -- ask for bad code
     @Test
     public void getNonexistentGameTest() throws IOException {
         int status = callHandler("/xxxxxxx", "GET");
-        assertEquals(status, 404);
+        assertEquals(404, status);
     }
 
     @Test
     public void outOfOrderTest() throws IOException {
         String code = callHandlerResponse("", "POST");
-        assertEquals(code.length(), 5);
+        assertEquals(5, code.length());
         // -- start before settings
-        int status = callHandler("/start/" + code, "PUT");
-        assertEquals(status, 500);
+        int status = callHandler("/" + code + "/start", "PUT");
+        assertEquals(500, status);
         // -- take turn before started
-        String card = new ObjectMapper().writer().writeValueAsString(new Card(Suit.HEARTS, 9));
-        status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/TRICK/null/Henry", "PUT", true);
-        assertEquals(status, 500);
+        TurnRequestBody body = new TurnRequestBody(new Card(Suit.HEARTS, 9), new Player("Billy"), WayToPlay.TRICK, null);
+        status = callHandler("/" + code + "/turn", "PUT", body.toJson());
+        assertEquals(500, status);
         // -- deal before started
-        status = callHandler("/deal/" + code, "PUT");
-        assertEquals(status, 500);
+        status = callHandler("/" + code + "/deal", "PUT");
+        assertEquals(500, status);
         List<String> names = List.of("Billy", "Bob", "Joe", "Me");
         for (String name: names) {
-            status = callHandler("/join/" + code + "/" + name, "PUT");
-            assertEquals(status, 200);
+            Player p = new Player(name);
+            status = callHandler("/" + code + "/players", "PUT", p.toJson());
+            assertEquals(200, status);
         }
         // -- start before settings again
-        status = callHandler("/start/" + code, "PUT");
-        assertEquals(status, 500);
-        String settings = pinochleSettingsStringForURL();
-        status = callHandler("/settings/" + code + "/" + settings, "PUT");
-        assertEquals(status, 200);
-        status = callHandler("/start/" + code, "PUT");
-        assertEquals(status, 200);
+        status = callHandler("/" + code + "/start", "PUT");
+        assertEquals(500, status);
+        Settings settings = pinochleSettings();
+        GameBean g = GameBean.fromJson(callHandlerResponse("/" + code, "GET"));
+        g.setSettings(settings);
+        status = callHandler("/" + code + "/settings", "PUT", g.toJson());
+        assertEquals(200, status);
+        status = callHandler("/" + code + "/start", "PUT");
+        assertEquals(200, status);
         // -- settings after started
-        status = callHandler("/settings/" + code + "/" + settings, "PUT");
-        assertEquals(status, 500);
+        status = callHandler("/" + code + "/settings", "PUT", g.toJson());
+        assertEquals(500, status);
         // -- join game after started
-        status = callHandler("/join/" + code + "/Rando", "PUT");
-        assertEquals(status, 500);
-        status = callHandler("/deal/" + code, "PUT");
-        assertEquals(status, 200);
-        // -- ask for a non-existent player
-        card = new ObjectMapper().writer().writeValueAsString(new Card(Suit.HEARTS, 9));
-        status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/TRICK/null/Rando", "PUT", true);
-        assertEquals(status, 500);
+        Player p = new Player("Rando");
+        status = callHandler("/" + code + "/players", "PUT", p.toJson());
+        assertEquals(500, status);
+        status = callHandler("/" + code + "/deal", "PUT");
+        assertEquals(200, status);
+        // -- ask for a non-existent player to take a turn
+        body = new TurnRequestBody(new Card(Suit.HEARTS, 9), p, WayToPlay.TRICK, null);
+        status = callHandler("/" + code + "/turn", "PUT", body.toJson());
+        assertEquals(500, status);
         // -- play card player does not have
-        card = new ObjectMapper().writer().writeValueAsString(new Card(Suit.HEARTS, 9));
-        status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/TRICK/null/Henry", "PUT", true);
-        assertEquals(status, 500);
+        body = new TurnRequestBody(new Card(Suit.HEARTS, 6), new Player("Billy"), WayToPlay.TRICK, null);
+        status = callHandler("/" + code + "/turn", "PUT", body.toJson());
+        assertEquals(500, status);
         // -- mismatch settings
-        card = new ObjectMapper().writer().writeValueAsString(new Card(Suit.HEARTS, 9));
-        status = callHandler("/turn/" + code + "/" + URLEncoder.encode(card, StandardCharsets.UTF_8) + "/DISCARD/null/Henry", "PUT", true);
-        assertEquals(status, 500);
+        body = new TurnRequestBody(new Card(Suit.HEARTS, 9), new Player("Billy"), WayToPlay.DISCARD, null);
+        status = callHandler("/" + code + "/turn", "PUT", body.toJson());
+        assertEquals(500, status);
         // -- get a game that does not exist
         status = callHandler("/xxxxxxx", "GET");
-        assertEquals(status, 404);
+        assertEquals(404, status);
         status = callHandler("/" + code, "DELETE");
-        assertEquals(status, 200);
+        assertEquals(200, status);
     }
+
+    private Settings pinochleSettings() {
+        int[] counts = {12, 12, 12, 12};
+        return pinochleSettings(counts, false, false);
+    }
+
+    private Settings pinochleSettings(int[] counts, boolean pass, boolean skip) {
+        return new Settings.SettingsBuilder(counts, DeckType.PINOCHLE)
+                .skip(skip)
+                .pass(pass)
+                .trick(true)
+                .show(true)
+                .teams(true)
+                .draw(true)
+                .build();
+    }
+
+    /* Various methods for calling handlers */
 
     private String callHandlerResponse(String tail, String requestMethod) throws IOException {
         String baseEndpoint = "https://kax95zucj1.execute-api.us-west-2.amazonaws.com/dev/deckocards";
@@ -113,7 +135,7 @@ public class BreakGameClientTest {
         }
         BufferedReader in = new BufferedReader(reader);
         String inputLine;
-        StringBuffer content = new StringBuffer();
+        StringBuilder content = new StringBuilder();
         while ((inputLine = in.readLine()) != null) {
             content.append(inputLine);
         }
@@ -128,8 +150,8 @@ public class BreakGameClientTest {
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod(requestMethod);
         con.setRequestProperty("Content-Type", "application/json");
-        con.setConnectTimeout(5000);
-        con.setReadTimeout(7000);
+        con.setConnectTimeout(0);
+        con.setReadTimeout(0);
         int status = con.getResponseCode();
         InputStreamReader reader;
         if (status > 299) {
@@ -151,25 +173,43 @@ public class BreakGameClientTest {
         return status;
     }
 
+    private int callHandler(String tail, String requestMethod, String body, boolean print) throws IOException {
+        String baseEndpoint = "https://kax95zucj1.execute-api.us-west-2.amazonaws.com/dev/deckocards";
+        URL url = new URL(baseEndpoint + tail);
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.setRequestMethod(requestMethod);
+        con.setRequestProperty("Content-Type", "application/json");
+        con.setConnectTimeout(0);
+        con.setReadTimeout(0);
+        con.setDoOutput(true);
+        byte[] input = body.getBytes(StandardCharsets.UTF_8);
+        con.getOutputStream().write(input, 0, input.length);
+        int status = con.getResponseCode();
+        InputStreamReader reader;
+        if (status > 299) {
+            reader = new InputStreamReader(con.getErrorStream());
+        } else {
+            reader = new InputStreamReader(con.getInputStream());
+        }
+        BufferedReader in = new BufferedReader(reader);
+        String inputLine;
+        StringBuffer content = new StringBuffer();
+        while ((inputLine = in.readLine()) != null) {
+            content.append(inputLine);
+        }
+        in.close();
+        con.disconnect();
+        if (status > 299 || print) {
+            System.out.println(content);
+        }
+        return status;
+    }
+
+    private int callHandler(String tail, String requestMethod, String body) throws IOException {
+        return callHandler(tail, requestMethod, body, false);
+    }
+
     private int callHandler(String tail, String requestMethod) throws IOException {
         return callHandler(tail, requestMethod, false);
-    }
-
-    private String pinochleSettingsStringForURL() throws JsonProcessingException {
-        int[] counts = {12, 12, 12, 12};
-        return pinochleSettingsStringForURL(counts, false, false);
-    }
-
-    private String pinochleSettingsStringForURL(int[] counts, boolean pass, boolean skip) throws JsonProcessingException {
-        Settings settings = new Settings.SettingsBuilder(counts, DeckType.PINOCHLE)
-                .skip(skip)
-                .pass(pass)
-                .trick(true)
-                .aceHigh(true)
-                .points(true)
-                .teams(true)
-                .show(true)
-                .build();
-        return URLEncoder.encode(new ObjectMapper().writer().writeValueAsString(settings));
     }
 }

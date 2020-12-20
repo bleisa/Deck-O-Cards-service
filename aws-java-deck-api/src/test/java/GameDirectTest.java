@@ -95,6 +95,18 @@ public class GameDirectTest {
                 .build();
         g.setSettings(settings);
         g.save(g);
+        g = new Game().getGame(passCode);
+        int[] counts2 = {16, 8, 16, 8};
+        settings = new Settings.SettingsBuilder(counts2, DeckType.PINOCHLE)
+                .trick(true)
+                .aceHigh(true)
+                .points(true)
+                .pass(true)
+                .teams(true)
+                .show(true)
+                .build();
+        g.setSettings(settings);
+        g.save(g);
     }
 
     @Test
@@ -125,7 +137,6 @@ public class GameDirectTest {
         System.out.println(hand);
     }
 
-    @Ignore
     @Test
     public void takeTurnDirectTest() {
         Game g = new Game().getGame(pinochleCode);
