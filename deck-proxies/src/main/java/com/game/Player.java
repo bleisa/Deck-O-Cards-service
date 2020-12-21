@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -77,7 +78,7 @@ public class Player {
      */
     public List<Card> getHand() {
         checkRep();
-        return List.copyOf(this.hand);
+        return Collections.unmodifiableList(this.hand);
     }
 
     /**
@@ -87,7 +88,7 @@ public class Player {
      */
     public List<Card> getCollected() {
         checkRep();
-        return List.copyOf(collected);
+        return Collections.unmodifiableList(collected);
     }
 
     /**
@@ -97,7 +98,7 @@ public class Player {
      */
     public List<Card> getShown() {
         checkRep();
-        return List.copyOf(shown);
+        return Collections.unmodifiableList(shown);
     }
 
     /**

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -62,7 +63,7 @@ public class GameBean {
      * @return an unmodifiable list of the players
      */
     public List<Player> getPlayers() {
-        return List.copyOf(players);
+        return Collections.unmodifiableList(players);
     }
 
     /**
@@ -116,7 +117,7 @@ public class GameBean {
      * @return an unmodifiable list of the cards that have been played on the current trick
      */
     public List<Card> getTrick() {
-        return List.copyOf(this.trick);
+        return Collections.unmodifiableList(this.trick);
     }
 
     /**
@@ -126,7 +127,7 @@ public class GameBean {
      * @return an unmodifiable list of the players who played cards on the current trick
      */
     public List<Player> getTrickPlayers() {
-        return List.copyOf(this.trickPlayers);
+        return Collections.unmodifiableList(this.trickPlayers);
     }
 
     /**
@@ -135,7 +136,7 @@ public class GameBean {
      * @return an unmodifiable list of the cards on the draw pile
      */
     public List<Card> getDraw() {
-        return List.copyOf(this.draw);
+        return Collections.unmodifiableList(this.draw);
     }
 
     /**
@@ -144,7 +145,7 @@ public class GameBean {
      * @return an unmodifiable list of the cards on the discard pile
      */
     public List<Card> getDiscard() {
-        return List.copyOf(this.discard);
+        return Collections.unmodifiableList(this.discard);
     }
 
     /**
