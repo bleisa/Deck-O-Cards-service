@@ -167,7 +167,7 @@ public final class Settings {
          */
         public SettingsBuilder discard(boolean discard) {
             this.discard = discard;
-            this.trick = !discard;
+            this.trick = false;
             return this;
         }
 
@@ -179,7 +179,7 @@ public final class Settings {
          */
         public SettingsBuilder trick(boolean trick) {
             this.trick = trick;
-            this.discard = !trick;
+            this.discard = false;
             return this;
         }
 

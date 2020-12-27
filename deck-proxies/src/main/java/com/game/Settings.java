@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -92,6 +93,10 @@ public final class Settings {
         return MAPPER.writeValueAsString(this);
     }
 
+    public static Settings fromJson(String s) throws IOException {
+        return MAPPER.readValue(s, Settings.class);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -174,7 +179,7 @@ public final class Settings {
          */
         public SettingsBuilder discard(boolean discard) {
             this.discard = discard;
-            this.trick = !discard;
+            this.trick = false;
             return this;
         }
 
@@ -186,7 +191,7 @@ public final class Settings {
          */
         public SettingsBuilder trick(boolean trick) {
             this.trick = trick;
-            this.discard = !trick;
+            this.discard = false;
             return this;
         }
 
