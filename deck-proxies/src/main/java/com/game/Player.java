@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -150,6 +151,17 @@ public class Player {
      */
     public String toJson() throws JsonProcessingException {
         return MAPPER.writeValueAsString(this);
+    }
+
+    /**
+     * gets the Player represented by the string
+     *
+     * @param s the JSON representation of a player
+     * @return the player represented by s
+     * @throws IOException if conversion fails
+     */
+    public static Player fromJson(String s) throws IOException {
+        return MAPPER.readValue(s, Player.class);
     }
 
     /**
