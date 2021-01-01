@@ -541,11 +541,11 @@ public class Game {
     }
 
     /**
-     * Adds the given number of points to the player's score
+     * Sets a player's score to a certain number of points
      *
      * @throws IllegalStateException if game has not started yet
-     * @param name the name of the player whose score is to be added to - must be in this game
-     * @param points the number of points to be added (can be positive or negative)
+     * @param name the name of the player whose score is to be set - must be in this game
+     * @param points the number of points to be set (can be positive or negative)
      */
     public void score(String name, int points) {
         Player p = getPlayer(name);
@@ -555,7 +555,7 @@ public class Game {
         if (!started) {
             throw new IllegalStateException("Game has not started yet");
         }
-        p.addPoints(points);
+        p.setPoints(points);
     }
 
     /**
