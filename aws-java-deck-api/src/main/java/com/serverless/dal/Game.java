@@ -403,6 +403,21 @@ public class Game {
     }
 
     /**
+     * Deals the deck and assigns each player a hand; if cards are left over, assigns them to the draw pile
+     * Sets the next player to be the player immediately after the dealer
+     *
+     * @param dealer the name of the player who dealt - must be in the game
+     */
+    public void deal(String dealer) {
+        Player p = playerNames.get(dealer);
+        if (!players.contains(p)) {
+            throw new IllegalArgumentException("Player is not in the game");
+        }
+        deal();
+        nextPlayer = players.get(playerIndices.get(dealer) + 1).getName();
+    }
+
+    /**
      * Returns a new Deck as specified by the settings (poker, pinochle, or euchre)
      *
      * @return the type of deck this game uses

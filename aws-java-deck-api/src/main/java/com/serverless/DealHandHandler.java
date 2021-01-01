@@ -20,9 +20,11 @@ public class DealHandHandler implements RequestHandler<Map<String, Object>, ApiG
 		try {
 			Map<String, String> query = (Map<String, String>) input.get("pathParameters");
 			String code = query.get("code");
+			JsonNode body = new ObjectMapper().readTree((String) input.get("body"));
+			String dealer = body.get("name").asText();
 			Game g = new Game().getGame(code);
 			if (g != null) {
-				g.deal();
+				g.deal(dealer);
 				g.save(g);
 				Response responseBody = new Response("deal successful: ", input);
 				return ApiGatewayResponse.builder()
