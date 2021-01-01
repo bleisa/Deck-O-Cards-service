@@ -1,5 +1,6 @@
 package com.game;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -258,6 +259,33 @@ public final class Settings {
          */
         public SettingsBuilder points(boolean points) {
             this.points = points;
+            return this;
+        }
+
+        /**
+         * sets the number of cards each player is dealt
+         *
+         * @param counts an array representing the number of cards to be dealt to each player
+         * @return this for chaining
+         */
+        @JsonIgnore
+        public SettingsBuilder counts(int[] counts) {
+            if (counts == null || counts.length == 0) {
+                throw new IllegalArgumentException("cardsPer cannot be null or empty");
+            }
+            this.cardsPer = counts;
+            return this;
+        }
+
+        /**
+         * sets the deck type
+         *
+         * @param type the type of deck to be used
+         * @return this for chaining
+         */
+        @JsonIgnore
+        public SettingsBuilder deckType(DeckType type) {
+            this.deckType = type;
             return this;
         }
 
