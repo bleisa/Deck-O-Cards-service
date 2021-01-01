@@ -403,18 +403,36 @@ public class Game {
     }
 
     /**
-     * Deals the deck and assigns each player a hand; if cards are left over, assigns them to the draw pile
+     * Deals the deck and assigns each player a hand, beginning with the player
+     * immediately after the dealer; if cards are left over, assigns them to the draw pile
      * Sets the next player to be the player immediately after the dealer
      *
      * @param dealer the name of the player who dealt - must be in the game
+     * @throws IllegalStateException if the game has not started yet
      */
     public void deal(String dealer) {
+        if (!started) {
+            throw new IllegalStateException("Game has not started yet");
+        }
         Player p = playerNames.get(dealer);
         if (!players.contains(p)) {
             throw new IllegalArgumentException("Player is not in the game");
         }
-        deal();
-        nextPlayer = players.get(playerIndices.get(dealer) + 1).getName();
+        Deck deck = getDeck();
+        List<List<Card>> deal = deck.deal(settings.getCardsPer());
+        int index = playerIndices.get(dealer);
+        int numPlayers = players.size();
+        for (int i = 0; i < numPlayers; i++) {
+            players.get((index + i + 1) % numPlayers).setHand(deal.get(i));
+        }
+        if (deal.size() > numPlayers) {
+            draw = deal.get(numPlayers);
+        }
+        if (index != numPlayers - 1) {
+            nextPlayer = players.get(index + 1).getName();
+        } else {
+            nextPlayer = players.get(0).getName();
+        }
     }
 
     /**
