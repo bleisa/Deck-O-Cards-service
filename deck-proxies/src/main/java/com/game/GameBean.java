@@ -55,7 +55,7 @@ public class GameBean {
     private String passedTo;
     @JsonProperty("cardPlayed")
     private Card cardPlayed;
-    @JsonProperty("way")
+    @JsonProperty("wayPlayed")
     private WayToPlay how;
 
     /**
