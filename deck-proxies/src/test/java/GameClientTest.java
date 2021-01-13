@@ -111,7 +111,7 @@ public class GameClientTest {
         status = callHandler("/" + code + "/start", "PUT");
         assertEquals(200, status);
         System.out.println("Game has been started....");
-        status = callHandler("/" + code + "/deal", "PUT");
+        status = callHandler("/" + code + "/deal", "PUT", g.getPlayers().get(0).toJson());
         assertEquals(200, status);
         System.out.println("Hands have been dealt....");
     }
