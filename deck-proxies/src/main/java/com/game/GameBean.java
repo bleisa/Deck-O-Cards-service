@@ -172,6 +172,7 @@ public class GameBean {
      *
      * @return the player who last took a turn
      */
+    @JsonIgnore
     public Player getLastPlayer() {
         return getPlayer(lastPlayer);
     }
@@ -183,6 +184,7 @@ public class GameBean {
      * @return the player to whom the last player passed a card, or null if the last player did
      * not pass any cards
      */
+    @JsonIgnore
     public Player getPassedTo() {
         if (passedTo != null) {
             return getPlayer(passedTo);
@@ -196,6 +198,7 @@ public class GameBean {
      *
      * @return the card that the last player played
      */
+    @JsonIgnore
     public Card getCardPlayed() {
         return cardPlayed;
     }
@@ -205,6 +208,7 @@ public class GameBean {
      *
      * @return the way that the last player played their card
      */
+    @JsonIgnore
     public WayToPlay getWayPlayed() {
         return how;
     }
