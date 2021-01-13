@@ -48,6 +48,16 @@ public class GameBean {
     @JsonProperty("started")
     private boolean started;
 
+    // data about the last turn taken
+    @JsonProperty("lastPlayer")
+    private String lastPlayer;
+    @JsonProperty("pass")
+    private String passedTo;
+    @JsonProperty("cardPlayed")
+    private Card cardPlayed;
+    @JsonProperty("way")
+    private WayToPlay how;
+
     /**
      * Constructs a new GameBean object with the given access code
      *
@@ -155,6 +165,48 @@ public class GameBean {
      */
     public boolean getStarted() {
         return this.started;
+    }
+
+    /**
+     * Gets the last player to take a turn
+     *
+     * @return the player who last took a turn
+     */
+    public Player getLastPlayer() {
+        return getPlayer(lastPlayer);
+    }
+
+    /**
+     * If the last player passed a card to another player on their turn, gets the player
+     * to whom they passed a card
+     *
+     * @return the player to whom the last player passed a card, or null if the last player did
+     * not pass any cards
+     */
+    public Player getPassedTo() {
+        if (passedTo != null) {
+            return getPlayer(passedTo);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Gets the card played on the last turn
+     *
+     * @return the card that the last player played
+     */
+    public Card getCardPlayed() {
+        return cardPlayed;
+    }
+
+    /**
+     * Gets how the last player played their card
+     *
+     * @return the way that the last player played their card
+     */
+    public WayToPlay getWayPlayed() {
+        return how;
     }
 
     /**

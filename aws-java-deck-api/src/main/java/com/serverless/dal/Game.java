@@ -46,16 +46,11 @@ public class Game {
 
     private String nextPlayer;                          // the name of the next player to play
 
-//    @DynamoDBTypeConverted(converter = CardConverter.class)
-//    @DynamoDBAttribute(attributeName = "card_played")
-//    @JsonProperty("cardPlayed")
-//    private Card cardPlayed;                            // the last card played
-//
-//    @DynamoDBTypeConvertedEnum
-//    @DynamoDBTypeConverted(converter = WayToPlayConverter.class)
-//    @DynamoDBAttribute(attributeName = "way_played")
-//    @JsonProperty("way")
-//    private WayToPlay way;                              // the way that cardPlayed was played
+    // game data that is only so it gets passed in beans
+    private Card cardPlayed;                            // the last card played
+    private WayToPlay way;                              // the way that cardPlayed was played
+    private String lastPlayer;                          // who was the last player to play
+    private String pass;                                // if the last card was passed, who it was passed to
 
     private Suit trump;
 
@@ -155,17 +150,24 @@ public class Game {
         this.started = started;
     }
 
-//    @DynamoDBTypeConverted(converter = CardConverter.class)
-//    @DynamoDBAttribute(attributeName = "card_played")
-//    public Card getCardPlayed() { return cardPlayed; }
-//    public void setCardPlayed(Card c) { cardPlayed = c; }
+    @DynamoDBTypeConverted(converter = CardConverter.class)
+    @DynamoDBAttribute(attributeName = "card_played")
+    public Card getCardPlayed() { return cardPlayed; }
+    public void setCardPlayed(Card c) { cardPlayed = c; }
 
-//    @DynamoDBTypeConvertedEnum
-//    @DynamoDBTypeConverted(converter = WayToPlayConverter.class)
-//    @DynamoDBAttribute(attributeName = "way_played")
-//    public WayToPlay getWay() { return this.way; }
-//    public void setWay(WayToPlay way) { this.way = way; }
+    @DynamoDBTypeConvertedEnum
+    @DynamoDBTypeConverted(converter = WayToPlayConverter.class)
+    @DynamoDBAttribute(attributeName = "way_played")
+    public WayToPlay getWay() { return this.way; }
+    public void setWay(WayToPlay way) { this.way = way; }
 
+    @DynamoDBAttribute(attributeName = "passed_to")
+    public String getPass() { return this.pass; }
+    public void setPass(String name) { this.pass = name; }
+
+    @DynamoDBAttribute(attributeName = "last_player")
+    public String getLastPlayer() { return this.lastPlayer; }
+    public void setLastPlayer(String name) { this.lastPlayer = name; }
 
     /**
      * gets the entry code for this game
@@ -333,8 +335,10 @@ public class Game {
             LOG.error(p.getName() + " does not have " + card.toString());
             throw new IllegalArgumentException("Player " + p.getName() + " does not have " + card.toString());
         }
-//        cardPlayed = card;
-//        way = how;
+        cardPlayed = card;
+        way = how;
+        this.pass = passedTo;
+        this.lastPlayer = played;
         if (!(how.equals(WayToPlay.DRAW) || how.equals(WayToPlay.PICKUP))) {
             p.getHand().remove(card);
         }
