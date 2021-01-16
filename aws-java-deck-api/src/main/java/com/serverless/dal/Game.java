@@ -404,6 +404,10 @@ public class Game {
         if (deal.size() > players.size()) {
             draw = deal.get(players.size());
         }
+        lastPlayer = null;
+        cardPlayed = null;
+        way = null;
+        pass = null;
     }
 
     /**
@@ -437,6 +441,10 @@ public class Game {
         } else {
             nextPlayer = players.get(0).getName();
         }
+        lastPlayer = null;
+        cardPlayed = null;
+        way = null;
+        pass = null;
     }
 
     /**
